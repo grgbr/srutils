@@ -8,7 +8,7 @@
 include ../common.mk
 
 common-cflags  := $(srutils-common-cflags)
-common-ldflags := $(srutils-common-ldflags)
+common-ldflags := $(srutils-common-ldflags) -L../srepo
 
 ifneq ($(filter y,$(CONFIG_SRPLUG_ASSERT)),)
 common-cflags       := $(filter-out -DNDEBUG,$(common-cflags))
@@ -21,8 +21,9 @@ libsrplug.a-objs     += $(call kconf_enabled,SRPLUG_DAEMON,static/daemon.o)
 libsrplug.a-objs     += $(call kconf_enabled,SRPLUG_THREAD,static/thread.o)
 libsrplug.a-cflags   := $(common-cflags)
 libsrplug.a-cflags   += $(call kconf_enabled,SRPLUG_THREAD,-pthread)
-libsrplug.a-pkgconf  := $(call kconf_enabled,SRPLUG_DAEMON,libelog) \
-                       libetux_timer_list libstroll
+libsrplug.a-pkgconf  := sysrepo libyang \
+                        $(call kconf_enabled,SRPLUG_DAEMON,libelog) \
+                        libetux_timer_list libstroll
 
 solibs               := libsrplug.so
 libsrplug.so-objs    := shared/data.o shared/common.o
@@ -31,8 +32,10 @@ libsrplug.so-objs    += $(call kconf_enabled,SRPLUG_THREAD,shared/thread.o)
 libsrplug.so-cflags  := $(filter-out -fpie -fPIE,$(common-cflags)) -fpic
 libsrplug.so-cflags  += $(call kconf_enabled,SRPLUG_THREAD,-pthread)
 libsrplug.so-ldflags := $(filter-out -pie -fpie -fPIE,$(common-ldflags)) \
-                        -shared -Bsymbolic -fpic -Wl,-soname,libsrplug.so
-libsrplug.so-pkgconf := $(call kconf_enabled,SRPLUG_DAEMON,libelog) \
+                        -shared -Bsymbolic -fpic -Wl,-soname,libsrplug.so \
+                        -lsrepo
+libsrplug.so-pkgconf := sysrepo libyang \
+                        $(call kconf_enabled,SRPLUG_DAEMON,libelog) \
                         libetux_timer_list libstroll
 
 # ex: filetype=make :

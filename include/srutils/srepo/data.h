@@ -66,7 +66,8 @@ srepo_dat_node_as_bool(const struct lyd_node * node)
 }
 
 extern sr_error_t
-srepo_dat_node_dflt_as_bool(const struct lyd_node * node, bool * value);
+srepo_dat_node_dflt_as_bool(const struct lyd_node * node, bool * value)
+	__srepo_export;
 
 static inline const char *
 srepo_dat_node_as_str(const struct lyd_node * node)
@@ -96,20 +97,19 @@ srepo_dat_node_name(const struct lyd_node * node)
 	return LYD_NAME(node);
 }
 
-extern char *
-srepo_dat_path(const struct lyd_node * node);
-
 extern sr_error_t
 srepo_dat_create_container(const struct ly_ctx * context,
                            struct lyd_node *     parent,
                            const char *          path,
-                           struct lyd_node **    container);
+                           struct lyd_node **    container)
+	__srepo_export;
 
 extern sr_error_t
 srepo_dat_create_list_ent(const struct ly_ctx * context,
                           struct lyd_node *     parent,
                           const char *          path,
-                          struct lyd_node **    entry);
+                          struct lyd_node **    entry)
+	__srepo_export;
 
 extern sr_error_t
 srepo_dat_create_list_keyent(const struct ly_ctx * context,
@@ -117,13 +117,15 @@ srepo_dat_create_list_keyent(const struct ly_ctx * context,
                              const char *          path,
                              const char *          key,
                              const char *          value,
-                             struct lyd_node **    entry);
+                             struct lyd_node **    entry)
+	__srepo_export;
 
 extern sr_error_t
 srepo_dat_create_leaf(struct lyd_node *  parent,
                       const char *       path,
                       const char *       value,
-                      struct lyd_node ** leaf);
+                      struct lyd_node ** leaf)
+	__srepo_export;
 
 #define SREPO_DAT_IMPLICIT_OPTS \
 	(LYD_IMPLICIT_NO_STATE | \
@@ -134,7 +136,8 @@ srepo_dat_create_leaf(struct lyd_node *  parent,
 extern sr_error_t
 srepo_dat_new_implicit(struct lyd_node *  tree,
                        uint32_t           options,
-                       struct lyd_node ** diff);
+                       struct lyd_node ** diff)
+	__srepo_export;
 
 static inline void
 srepo_dat_free_tree(struct lyd_node * tree)

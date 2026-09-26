@@ -1,4 +1,5 @@
 #include "srutils/srplug/daemon.h"
+#include "common.h"
 #include <stroll/array.h>
 #include <utils/signal.h>
 #include <sysexits.h>
@@ -850,11 +851,9 @@ srplug_daemon_cmdln_parse(int                                argc,
 		.conf  = config
 	};
 
-	opts = malloc((cmdln->nr +
-	               stroll_array_nr(srplug_daemon_cmdln_intern_opts)) *
-	              sizeof(opts[0]));
-	if (!opts)
-		srplug_abort();
+	opts = srplug_malloc((cmdln->nr +
+	                     stroll_array_nr(srplug_daemon_cmdln_intern_opts)) *
+	                     sizeof(opts[0]));
 
 	for (o = 0; o < cmdln->nr; o++) {
 		srplug_daemon_cmdln_assert_opt(&cmdln->opts[o]);
@@ -947,6 +946,22 @@ free_opts:
 
 	return (ret != ESHUTDOWN) ? -ret : 1;
 }
+
+#if defined(CONFIG_SRPLUG_DAEMON_CONFIG)
+
+struct srplug_daemon_conf *
+srplug_daemon_alloc_conf(void)
+{
+	return srplug_malloc(sizeof(struct srplug_daemon_conf));
+}
+
+void
+srplug_daemon_free_conf(struct srplug_daemon_conf * config)
+{
+	srplug_free(config);
+}
+
+#endif /* defined(CONFIG_SRPLUG_DAEMON_CONFIG) */
 
 /******************************************************************************
  * Signal handling.

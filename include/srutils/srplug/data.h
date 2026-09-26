@@ -9,7 +9,8 @@
  ******************************************************************************/
 
 extern char *
-srplug_dat_path(const struct lyd_node * node);
+srplug_dat_path(const struct lyd_node * node)
+	__srplug_export;
 
 /******************************************************************************
  * YANG data node value manipulation.
@@ -19,13 +20,15 @@ extern sr_error_t
 srplug_dat_create_container(const struct ly_ctx * context,
                             struct lyd_node *     parent,
                             const char *          path,
-                            struct lyd_node **    container);
+                            struct lyd_node **    container)
+	__srplug_export;
 
 extern sr_error_t
 srplug_dat_create_list_ent(const struct ly_ctx * context,
                            struct lyd_node *     parent,
                            const char *          path,
-                           struct lyd_node **    entry);
+                           struct lyd_node **    entry)
+	__srplug_export;
 
 extern sr_error_t
 srplug_dat_create_list_keyent(const struct ly_ctx * context,
@@ -33,18 +36,21 @@ srplug_dat_create_list_keyent(const struct ly_ctx * context,
                               const char *          path,
                               const char *          key,
                               const char *          value,
-                              struct lyd_node **    entry);
+                              struct lyd_node **    entry)
+	__srplug_export;
 
 extern sr_error_t
 srplug_dat_create_leaf(struct lyd_node *  parent,
                        const char *       path,
                        const char *       value,
-                       struct lyd_node ** leaf);
+                       struct lyd_node ** leaf)
+	__srplug_export;
 
 extern sr_error_t
 srplug_dat_populate_defaults(struct lyd_node *  tree,
                              uint32_t           options,
-                             struct lyd_node ** diff);
+                             struct lyd_node ** diff)
+	__srplug_export;
 
 static inline void
 srplug_dat_free_tree(struct lyd_node * tree)
@@ -59,6 +65,7 @@ srplug_dat_free_tree(struct lyd_node * tree)
 extern int
 srplug_dat_load_node(sr_session_ctx_t * session,
                      const char *       xpath,
-                     sr_data_t **       data);
+                     sr_data_t **       data)
+	__srplug_export;
 
 #endif /* _SRPLUG_DATA_H */

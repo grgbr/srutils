@@ -1,4 +1,5 @@
 #include "srutils/srplug/data.h"
+#include "common.h"
 
 #if defined(CONFIG_SRPLUG_DAEMON)
 #include "srutils/srplug/daemon.h"

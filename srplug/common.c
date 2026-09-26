@@ -1,4 +1,4 @@
-#include "srutils/srplug/common.h"
+#include "common.h"
 #include "srutils/srplug/data.h"
 #include "srutils/srepo/schema.h"
 
@@ -10,23 +10,56 @@
 #error Invalid build configuration: no implementation found !
 #endif
 
-void *
-srplug_malloc(size_t size)
-{
-	srplug_assert(size);
-
-	void * data;
-
-	data = malloc(size);
-	if (!data)
-		srplug_abort();
-
-	return data;
-}
-
 /******************************************************************************
  * Sysrepo data changes handling.
  ******************************************************************************/
+
+#if defined(SRPLUG_DEBUG)
+
+sr_error_t
+srplug_change_debug(const struct lyd_node * node,
+                    sr_change_oper_t        oper,
+                    const char *            old,
+                    void *                  data)
+{
+	srplug_assert(node);
+
+	const char * op;
+
+	switch (oper) {
+	case SR_OP_CREATED:
+		op = "create";
+		break;
+
+	case SR_OP_MODIFIED:
+		op = "modify";
+		break;
+
+	case SR_OP_DELETED:
+		op = "delete";
+		break;
+
+	case SR_OP_MOVED:
+		op = "move";
+		break;
+
+	default:
+		srplug_assert(0);
+	}
+
+	srplug_node_debug(node,
+	                  "%s change event: %s%s%s --> '%s' [data:%p]",
+	                  op,
+	                  old ? "'" : "",
+	                  old ? old : "none",
+	                  old ? "'" : "",
+	                  srepo_dat_node_as_str(node),
+	                  data);
+
+	return SR_ERR_OK;
+}
+
+#endif /* defined(SRPLUG_DEBUG) */
 
 sr_error_t
 srplug_handle_changes(sr_session_ctx_t *        session,
@@ -232,6 +265,42 @@ srplug_find_module(const struct ly_ctx * context, const char * module)
 	srplug_notice("'%s': missing YANG module", module);
 
 	return NULL;
+}
+
+sr_error_t
+srplug_probe_feature(const struct ly_ctx * context,
+                     const char *          module,
+                     struct srplug_feat *  feature)
+{
+	const struct lys_module * mod;
+	LY_ERR                    ret;
+
+	mod = srplug_find_module(context, module);
+	if (!mod)
+		return SR_ERR_NOT_FOUND;
+
+	ret = lys_feature_value(mod, feature->name);
+	switch (ret) {
+	case LY_SUCCESS:
+		feature->on = true;
+		return SR_ERR_OK;
+
+	case LY_ENOT:
+		feature->on = false;
+		return SR_ERR_OK;
+
+	case LY_ENOTFOUND:
+		break;
+
+	default:
+		srplug_assert(0);
+	}
+
+	srplug_warn("'%s': YANG feature '%s' not found",
+	            mod->name,
+	            feature->name);
+
+	return SR_ERR_NOT_FOUND;
 }
 
 sr_error_t

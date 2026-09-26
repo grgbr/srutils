@@ -26,17 +26,13 @@ struct srplug_daemon_conf {
 
 #if defined(CONFIG_SRPLUG_DAEMON_CONFIG)
 
-static inline struct srplug_daemon_conf *
+extern struct srplug_daemon_conf *
 srplug_daemon_alloc_conf(void)
-{
-	return srplug_malloc(sizeof(struct srplug_daemon_conf));
-}
+	__srplug_export;
 
-static inline void
+extern void
 srplug_daemon_free_conf(struct srplug_daemon_conf * config)
-{
-	srplug_free(config);
-}
+	__srplug_export;
 
 #else  /* !defined(CONFIG_SRPLUG_DAEMON_CONFIG) */
 
@@ -83,7 +79,8 @@ extern int
 srplug_daemon_cmdln_parse(int                                argc,
                           char *                             argv[],
                           const struct srplug_daemon_cmdln * cmdln,
-                          struct srplug_daemon_conf *        config);
+                          struct srplug_daemon_conf *        config)
+	__srplug_export;
 
 /******************************************************************************
  * Logging handling.
@@ -92,7 +89,8 @@ srplug_daemon_cmdln_parse(int                                argc,
 #if defined(CONFIG_SRPLUG_LOG)
 
 extern void
-srplug_daemon_log(enum elog_severity severity, const char * format, ...);
+srplug_daemon_log(enum elog_severity severity, const char * format, ...)
+	__srplug_export;
 
 #define srplug_log(_svrt, _fmt, ...) \
 	srplug_daemon_log(_svrt, _fmt ".", ## __VA_ARGS__)
@@ -144,12 +142,14 @@ srplug_daemon_log(enum elog_severity severity, const char * format, ...);
 #endif /* defined(CONFIG_SRPLUG_LOG) */
 
 extern struct elog *
-srplug_daemon_create_log(const struct srplug_daemon_conf * config);
+srplug_daemon_create_log(const struct srplug_daemon_conf * config)
+	__srplug_export;
 
 #if defined(CONFIG_SRPLUG_LOG)
 
 extern void
-srplug_daemon_destroy_log(struct elog * logger);
+srplug_daemon_destroy_log(struct elog * logger)
+	__srplug_export;
 
 #else  /* !defined(CONFIG_SRPLUG_LOG) */
 
@@ -202,36 +202,44 @@ srplug_daemon_poller(const struct srplug_daemon * daemon)
 extern int
 srplug_daemon_change_subscribe(struct srplug_daemon *           daemon,
                                const struct srplug_change_sub * subscription,
-                               void *                           data);
+                               void *                           data)
+	__srplug_export;
 
 extern int
 srplug_daemon_oper_subscribe(struct srplug_daemon *         daemon,
                              const struct srplug_oper_sub * subscription,
-                             void *                         data);
+                             void *                         data)
+	__srplug_export;
 
 extern int
 srplug_daemon_rpc_subscribe(struct srplug_daemon *        daemon,
                             const struct srplug_rpc_sub * subscription,
-                            void *                        data);
+                            void *                        data)
+	__srplug_export;
 
 extern int
 srplug_daemon_subscribe(struct srplug_daemon *    daemon,
                         const struct srplug_sub * subscription,
-                        void *                    data);
+                        void *                    data)
+	__srplug_export;
 
 extern int
 srplug_daemon_subscribe_all(struct srplug_daemon *    daemon,
                             const struct srplug_sub * subscriptions,
                             unsigned int              nr,
-                            void *                    data);
+                            void *                    data)
+	__srplug_export;
 
 extern int
-srplug_daemon_poll(const struct srplug_daemon * daemon);
+srplug_daemon_poll(const struct srplug_daemon * daemon)
+	__srplug_export;
 
 extern int
-srplug_daemon_open(struct srplug_daemon * daemon, unsigned int poll_nr);
+srplug_daemon_open(struct srplug_daemon * daemon, unsigned int poll_nr)
+	__srplug_export;
 
 extern void
-srplug_daemon_close(struct srplug_daemon * daemon);
+srplug_daemon_close(struct srplug_daemon * daemon)
+	__srplug_export;
 
 #endif /* defined(CONFIG_SRPLUG_DAEMON) */

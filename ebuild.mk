@@ -38,6 +38,7 @@ Name: libsrepo
 Description: srepo library
 Version: $(VERSION)
 Cflags: -I$${includedir}
+Requires: sysrepo libyang
 $(libsrepo_pkgconf_libs)
 endef
 
@@ -58,8 +59,8 @@ includedir=$${prefix}/include
 Name: libsrplug
 Description: srplug library
 Version: $(VERSION)
-Requires: libsrepo
 Cflags: -I$${includedir}
+Requires: libsrepo
 $(libsrplug_pkgconf_libs)
 endef
 
