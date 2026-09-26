@@ -177,7 +177,8 @@ srplug_dispatch_child_change(const struct lyd_node * node,
 
 		srplug_assert_change_hndlr(hndlr);
 
-		if (!strcmp(name, hndlr->name)) {
+		if ((!hndlr->feature || hndlr->feature->on) &&
+		    !strcmp(name, hndlr->name)) {
 			srplug_node_debug(node,
 			                  "handling '%s' change operation",
 			                  srplug_change_oper_str(oper));

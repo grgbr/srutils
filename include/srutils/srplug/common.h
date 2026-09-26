@@ -232,9 +232,17 @@ srplug_handle_changes(sr_session_ctx_t *        session,
  * Configuration data change HaNDLeR.
  */
 struct srplug_change_hndlr {
-	const char *              name;
-	srplug_handle_change_fn * handle;
+	const char *               name;
+	const struct srplug_feat * feature;
+	srplug_handle_change_fn *  handle;
 };
+
+#define SRPLUG_CHANGE_HNDLR(_name, _feat, _handle) \
+	{ \
+		.name    = _name, \
+		.feature = _feat, \
+		.handle  = _handle, \
+	}
 
 /**
  * Process configuration data changes related to XPATH direct children according
@@ -249,25 +257,28 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
 	__srplug_export;
 
 struct srplug_change_sub {
-	const char *        module;
-	const char *        xpath;
-	sr_module_change_cb on_change;
-	uint32_t            priority;
-	uint32_t            options;
+	const char *               module;
+	const char *               xpath;
+	const struct srplug_feat * feature;
+	sr_module_change_cb        on_change;
+	uint32_t                   priority;
+	uint32_t                   options;
 };
 
 struct srplug_oper_sub {
-	const char *         module;
-	const char *         xpath;
-	sr_oper_get_items_cb on_get;
-	uint32_t             options;
+	const char *               module;
+	const char *               xpath;
+	const struct srplug_feat * feature;
+	sr_oper_get_items_cb       on_get;
+	uint32_t                   options;
 };
 
 struct srplug_rpc_sub {
-	const char * xpath;
-	sr_rpc_cb    on_rpc;
-	uint32_t     priority;
-	uint32_t     options;
+	const char *               xpath;
+	const struct srplug_feat * feature;
+	sr_rpc_cb                  on_rpc;
+	uint32_t                   priority;
+	uint32_t                   options;
 };
 
 enum srplug_sub_kind {
@@ -286,37 +297,40 @@ struct srplug_sub {
 	};
 };
 
-#define SRPLUG_CHANGE_SUB(_mod, _xpath, _on_change, _prio, _opts) \
+#define SRPLUG_CHANGE_SUB(_mod, _xpath, _feat, _on_change, _prio, _opts) \
 	{ \
 		.kind   = SRPLUG_CHANGE_SUB_KIND, \
 		.change = { \
 			.module    = _mod, \
 			.xpath     = _xpath, \
+			.feature   = _feat, \
 			.on_change = _on_change, \
 			.priority  = _prio, \
 			.options   = _opts \
 		} \
 	}
 
-#define SRPLUG_OPER_SUB(_mod, _xpath, _on_get, _prio, _opts) \
+#define SRPLUG_OPER_SUB(_mod, _xpath, _feat, _on_get, _prio, _opts) \
 	{ \
 		.kind = SRPLUG_OPER_SUB_KIND, \
 		.oper = { \
 			.module  = _mod, \
 			.xpath   = _xpath, \
+			.feature = _feat, \
 			.on_get  = _on_get, \
 			.options = _opts \
 		} \
 	}
 
-#define SRPLUG_RPC_SUB(_mod, _xpath, _on_change, _prio, _opts) \
+#define SRPLUG_RPC_SUB(_mod, _xpath, _feat, _on_change, _prio, _opts) \
 	{ \
 		.kind = SRPLUG_RPC_SUB_KIND, \
 		.rpc  = { \
-			.xpath     = _xpath, \
-			.on_rpc    = _on_rpc, \
-			.priority  = _prio, \
-			.options   = _opts \
+			.xpath    = _xpath, \
+			.feature  = _feat, \
+			.on_rpc   = _on_rpc, \
+			.priority = _prio, \
+			.options  = _opts \
 		} \
 	}
 
