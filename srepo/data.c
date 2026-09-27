@@ -188,3 +188,39 @@ srepo_dat_new_implicit(struct lyd_node *  tree,
 
 	return srepo_ly_error(ret);
 }
+
+/******************************************************************************
+ * Searching for / loading YANG data nodes / trees.
+ ******************************************************************************/
+
+sr_error_t
+srepo_dat_load(sr_session_ctx_t * session,
+               const char *       xpath,
+               unsigned int       depth,
+               sr_get_oper_flag_t flags,
+               sr_data_t **       data)
+{
+	srepo_assert(session);
+	srepo_assert(xpath);
+	srepo_assert(xpath[0]);
+	srepo_dat_assert_flags(flags);
+	srepo_assert(data);
+
+	sr_error_t err;
+
+	err = sr_get_data(session, xpath, depth, 0, flags, data);
+	if (err != SR_ERR_OK) {
+		if (err == SR_ERR_NOT_FOUND)
+			/* Path is invalid: no nodes will ever match it. */
+			err = SR_ERR_INVAL_ARG;
+		return err;
+	}
+
+	if (!*data)
+		/* Valid path but no corresponding data subtree(s) found. */
+		return SR_ERR_NOT_FOUND;
+
+	srepo_assert((*data)->tree);
+
+	return SR_ERR_OK;
+}

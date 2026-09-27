@@ -162,7 +162,31 @@ srplug_dat_populate_defaults(struct lyd_node *  tree,
  * Searching for / loading YANG data nodes / trees.
  ******************************************************************************/
 
-int
+sr_error_t
+srplug_dat_load(sr_session_ctx_t * session,
+                const char *       xpath,
+                unsigned int       depth,
+                sr_get_oper_flag_t flags,
+                sr_data_t **       data)
+{
+	srplug_assert(session);
+	srplug_assert(xpath);
+	srplug_assert(xpath[0]);
+	srepo_dat_assert_flags(flags);
+	srplug_assert(data);
+
+	sr_error_t ret;
+
+	ret = srepo_dat_load(session, xpath, depth, flags, data);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	return ret;
+}
+
+sr_error_t
 srplug_dat_load_node(sr_session_ctx_t * session,
                      const char *       xpath,
                      sr_data_t **       data)
