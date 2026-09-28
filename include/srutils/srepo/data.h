@@ -3,6 +3,7 @@
 
 #include <srutils/srepo/common.h>
 #include <stdbool.h>
+#include <stdarg.h>
 
 /******************************************************************************
  * YANG xpath manipulation.
@@ -20,12 +21,21 @@ srepo_dat_path(const struct lyd_node * node)
  * YANG data node value manipulation.
  ******************************************************************************/
 
+static inline uint16_t
+srepo_dat_node_type(const struct lyd_node * node)
+{
+	srepo_assert(node);
+	srepo_assert(node->schema);
+
+	return node->schema->nodetype;
+}
+
 static inline const struct lyd_value *
 srepo_dat_node_value(const struct lyd_node * node)
 {
 	srepo_assert(node);
 	srepo_assert(node->schema);
-	srepo_assert(node->schema->nodetype & LYD_NODE_TERM);
+	srepo_assert(srepo_dat_node_type(node) & LYD_NODE_TERM);
 
 	return &((const struct lyd_node_term *)node)->value;
 }
@@ -35,7 +45,7 @@ srepo_dat_node_dflt(const struct lyd_node * node)
 {
 	srepo_assert(node);
 	srepo_assert(node->schema);
-	srepo_assert(node->schema->nodetype == LYS_LEAF);
+	srepo_assert(srepo_dat_node_type(node) == LYS_LEAF);
 
 	const struct lysc_node_leaf * leaf = (const struct lysc_node_leaf *)
 	                                     node->schema;
@@ -74,7 +84,7 @@ srepo_dat_node_as_str(const struct lyd_node * node)
 {
 	srepo_assert(node);
 	srepo_assert(node->schema);
-	srepo_assert(node->schema->nodetype & LYD_NODE_TERM);
+	srepo_assert(srepo_dat_node_type(node) & LYD_NODE_TERM);
 
 	return lyd_get_value(node);
 }
@@ -125,6 +135,22 @@ srepo_dat_create_leaf(struct lyd_node *  parent,
                       const char *       path,
                       const char *       value,
                       struct lyd_node ** leaf)
+	__srepo_export;
+
+extern sr_error_t
+srepo_dat_create_leaf_vprintf(struct lyd_node *  parent,
+                              const char *       path,
+                              struct lyd_node ** leaf,
+                              const char *       format,
+                              va_list            args)
+	__srepo_export;
+
+extern sr_error_t
+srepo_dat_create_leaf_printf(struct lyd_node *  parent,
+                             const char *       path,
+                             struct lyd_node ** leaf,
+                             const char *       format,
+                             ...)
 	__srepo_export;
 
 #define SREPO_DAT_IMPLICIT_OPTS \

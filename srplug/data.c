@@ -138,6 +138,57 @@ srplug_dat_create_leaf(struct lyd_node *  parent,
 }
 
 sr_error_t
+srplug_dat_create_leaf_vprintf(struct lyd_node *  parent,
+                               const char *       path,
+                               struct lyd_node ** leaf,
+                               const char *       format,
+                               va_list            args)
+{
+	srplug_assert(parent);
+	srplug_assert(path);
+	srplug_assert(path[0]);
+	srplug_assert(format);
+
+	sr_error_t ret;
+
+	ret = srepo_dat_create_leaf_vprintf(parent, path, leaf, format, args);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	srplug_pnode_notice(parent, path, "cannot create leaf");
+
+	return ret;
+}
+
+sr_error_t
+srplug_dat_create_leaf_printf(struct lyd_node *  parent,
+                              const char *       path,
+                              struct lyd_node ** leaf,
+                              const char *       format,
+                              ...)
+{
+	srplug_assert(parent);
+	srplug_assert(path);
+	srplug_assert(path[0]);
+	srplug_assert(format);
+
+	va_list args;
+	int     ret;
+
+	va_start(args, format);
+	ret = srplug_dat_create_leaf_vprintf(parent,
+	                                     path,
+	                                     leaf,
+	                                     format,
+	                                     args);
+	va_end(args);
+
+	return ret;
+}
+
+sr_error_t
 srplug_dat_populate_defaults(struct lyd_node *  tree,
                              uint32_t           options,
                              struct lyd_node ** diff)

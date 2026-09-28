@@ -174,6 +174,63 @@ srepo_dat_create_leaf(struct lyd_node *  parent,
 }
 
 sr_error_t
+srepo_dat_create_leaf_vprintf(struct lyd_node *  parent,
+                              const char *       path,
+                              struct lyd_node ** leaf,
+                              const char *       format,
+                              va_list            args)
+{
+	srepo_assert(parent);
+	srepo_assert(path);
+	srepo_assert(path[0]);
+	srepo_assert(format);
+
+	int    ret;
+	char * val;
+
+	ret = vasprintf(&val, format, args);
+	srepo_assert(ret);
+	if (ret < 0) {
+		if (errno == ENOMEM)
+			return SR_ERR_NO_MEMORY;
+		return SR_ERR_LY;
+	}
+
+	ret = srepo_dat_new_path(NULL, parent, path, val, 0, leaf);
+	srepo_assert(ret != LY_EEXIST);
+
+	free(val);
+
+	return srepo_ly_error(ret);
+}
+
+sr_error_t
+srepo_dat_create_leaf_printf(struct lyd_node *  parent,
+                             const char *       path,
+                             struct lyd_node ** leaf,
+                             const char *       format,
+                             ...)
+{
+	srepo_assert(parent);
+	srepo_assert(path);
+	srepo_assert(path[0]);
+	srepo_assert(format);
+
+	va_list args;
+	int     ret;
+
+	va_start(args, format);
+	ret = srepo_dat_create_leaf_vprintf(parent,
+	                                    path,
+	                                    leaf,
+	                                    format,
+	                                    args);
+	va_end(args);
+
+	return ret;
+}
+
+sr_error_t
 srepo_dat_new_implicit(struct lyd_node *  tree,
                        uint32_t           options,
                        struct lyd_node ** diff)
