@@ -219,4 +219,29 @@ srepo_dat_load_node(sr_session_ctx_t * session,
 	return SR_ERR_OK;
 }
 
+/******************************************************************************
+ * Debugging / printing YANG data nodes / trees.
+ ******************************************************************************/
+
+#if defined(CONFIG_SREPO_PRINT)
+
+#define srepo_dat_isprint_format_valid(_fmt) \
+	(((_fmt) == LYD_XML) || ((_fmt) == LYD_JSON) || ((_fmt) == LYD_LYB))
+
+extern sr_error_t
+srepo_dat_print_data(const sr_data_t * data,
+                     LYD_FORMAT        format,
+                     struct ly_out *   printer)
+	__srepo_export;
+
+extern sr_error_t
+srepo_open_stdio_print(struct ly_out ** printer, FILE * stdio)
+	__srepo_export;
+
+extern void
+srepo_close_stdio_print(struct ly_out * printer)
+	__srepo_export;
+
+#endif /* defined(CONFIG_SREPO_PRINT) */
+
 #endif /* _SREPO_DATA_H */

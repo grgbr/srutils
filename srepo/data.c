@@ -281,3 +281,53 @@ srepo_dat_load(sr_session_ctx_t * session,
 
 	return SR_ERR_OK;
 }
+
+/******************************************************************************
+ * Debugging / printing YANG data nodes / trees.
+ ******************************************************************************/
+
+#if defined(CONFIG_SREPO_PRINT)
+
+sr_error_t
+srepo_dat_print_data(const sr_data_t * data,
+                     LYD_FORMAT        format,
+                     struct ly_out *   printer)
+{
+	srepo_assert(data);
+	srepo_assert(printer);
+	srepo_assert(srepo_dat_isprint_format_valid(format));
+
+	LY_ERR ret;
+
+	ret = lyd_print_all(printer,
+	                    data->tree,
+	                    format,
+	                    LYD_PRINT_EMPTY_LEAF_LIST | LYD_PRINT_WD_IMPL_TAG);
+	srepo_assert(ret != LY_EINVAL);
+
+	return srepo_ly_error(ret);
+}
+
+sr_error_t
+srepo_open_stdio_print(struct ly_out ** printer, FILE * stdio)
+{
+	srepo_assert(printer);
+	srepo_assert(stdio);
+
+	LY_ERR ret;
+
+	ret = ly_out_new_file(stdio, printer);
+	srepo_assert(ret != LY_EINVAL);
+
+	return srepo_ly_error(ret);
+}
+
+void
+srepo_close_stdio_print(struct ly_out * printer)
+{
+	srepo_assert(printer);
+
+	ly_out_free(printer, NULL, 0);
+}
+
+#endif /* defined(CONFIG_SREPO_PRINT) */

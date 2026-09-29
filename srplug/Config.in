@@ -21,6 +21,13 @@ config SRPLUG_DEBUG
 	  cleanup logic suitable for memory error detection tools such as
 	  Valgrind's Memcheck and co.
 
+config SRPLUG_PRINT
+        bool "Object printing"
+        depends on SREPO_PRINT
+        default SREPO_PRINT
+        help
+          Build srplug with support for displaying objects content on console.
+
 config SRPLUG_LOG
 	bool
 	default n
