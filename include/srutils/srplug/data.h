@@ -86,6 +86,12 @@ srplug_dat_free_tree(struct lyd_node * tree)
  ******************************************************************************/
 
 extern sr_error_t
+srplug_dat_print_stdio_data(const sr_data_t * data,
+                            LYD_FORMAT        format,
+                            FILE *            stdio)
+	__srepo_export;
+
+extern sr_error_t
 srplug_dat_load(sr_session_ctx_t * session,
                 const char *       xpath,
                 unsigned int       depth,
@@ -98,6 +104,14 @@ srplug_dat_load_node(sr_session_ctx_t * session,
                      const char *       xpath,
                      sr_data_t **       data)
 	__srplug_export;
+
+static inline void
+srplug_dat_release(sr_data_t * data)
+{
+	srplug_assert(data);
+
+	srepo_dat_release(data);
+}
 
 /******************************************************************************
  * Debugging / printing YANG data nodes / trees.
