@@ -241,6 +241,26 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
 }
 
 sr_error_t
+srplug_apply_changes(sr_session_ctx_t * session)
+{
+	srplug_assert(session);
+
+	sr_error_t ret;
+
+	ret = srepo_apply_changes(session);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	srplug_warn("'%s': cannot apply changes: %s",
+	            srepo_dstore_str(sr_session_get_ds(session)),
+	            sr_strerror(ret));
+
+	return ret;
+}
+
+sr_error_t
 srplug_replace_config(sr_session_ctx_t * session,
                       const char *       module,
                       struct lyd_node *  tree)

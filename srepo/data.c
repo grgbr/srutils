@@ -251,11 +251,11 @@ srepo_dat_new_implicit(struct lyd_node *  tree,
  ******************************************************************************/
 
 sr_error_t
-srepo_dat_load(sr_session_ctx_t * session,
-               const char *       xpath,
-               unsigned int       depth,
-               sr_get_oper_flag_t flags,
-               sr_data_t **       data)
+srepo_dat_load_data(sr_session_ctx_t * session,
+                    const char *       xpath,
+                    unsigned int       depth,
+                    sr_get_oper_flag_t flags,
+                    sr_data_t **       data)
 {
 	srepo_assert(session);
 	srepo_assert(xpath);

@@ -50,7 +50,10 @@ srplug_dat_create_container(const struct ly_ctx * context,
 	else if (ret == SR_ERR_NO_MEMORY)
 		srplug_abort();
 
-	srplug_pnode_notice(parent, path, "cannot create container");
+	srplug_pnode_notice(parent,
+	                    path,
+	                    "cannot create container: %s",
+	                    sr_strerror(ret));
 
 	return ret;
 }
@@ -74,7 +77,10 @@ srplug_dat_create_list_ent(const struct ly_ctx * context,
 	else if (ret == SR_ERR_NO_MEMORY)
 		srplug_abort();
 
-	srplug_pnode_notice(parent, path, "cannot create list entry");
+	srplug_pnode_notice(parent,
+	                    path,
+	                    "cannot create list entry: %s",
+	                    sr_strerror(ret));
 
 	return ret;
 }
@@ -109,7 +115,10 @@ srplug_dat_create_list_keyent(const struct ly_ctx * context,
 	else if (ret == SR_ERR_NO_MEMORY)
 		srplug_abort();
 
-	srplug_pnode_notice(parent, path, "cannot create keyed list entry");
+	srplug_pnode_notice(parent,
+	                    path,
+	                    "cannot create keyed list entry: %s",
+	                    sr_strerror(ret));
 
 	return ret;
 }
@@ -132,7 +141,10 @@ srplug_dat_create_leaf(struct lyd_node *  parent,
 	else if (ret == SR_ERR_NO_MEMORY)
 		srplug_abort();
 
-	srplug_pnode_notice(parent, path, "cannot create leaf");
+	srplug_pnode_notice(parent,
+	                    path,
+	                    "cannot create leaf: %s",
+	                    sr_strerror(ret));
 
 	return ret;
 }
@@ -157,7 +169,10 @@ srplug_dat_create_leaf_vprintf(struct lyd_node *  parent,
 	else if (ret == SR_ERR_NO_MEMORY)
 		srplug_abort();
 
-	srplug_pnode_notice(parent, path, "cannot create leaf");
+	srplug_pnode_notice(parent,
+	                    path,
+	                    "cannot create leaf: %s",
+	                    sr_strerror(ret));
 
 	return ret;
 }
@@ -204,7 +219,29 @@ srplug_dat_populate_defaults(struct lyd_node *  tree,
 	else if (ret == SR_ERR_NO_MEMORY)
 		srplug_abort();
 
-	srplug_node_notice(tree, "cannot populate with default nodes");
+	srplug_node_notice(tree,
+	                   "cannot populate with default nodes: %s",
+	                   sr_strerror(ret));
+
+	return ret;
+}
+
+sr_error_t
+srplug_dat_merge_batch(sr_session_ctx_t *      session,
+                       const struct lyd_node * trees)
+{
+	srplug_assert(session);
+	srplug_assert(trees);
+
+	sr_error_t ret;
+
+	ret = srepo_dat_merge_batch(session, trees);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	srplug_notice("cannot prepare changes batch: %s", sr_strerror(ret));
 
 	return ret;
 }
@@ -214,11 +251,11 @@ srplug_dat_populate_defaults(struct lyd_node *  tree,
  ******************************************************************************/
 
 sr_error_t
-srplug_dat_load(sr_session_ctx_t * session,
-                const char *       xpath,
-                unsigned int       depth,
-                sr_get_oper_flag_t flags,
-                sr_data_t **       data)
+srplug_dat_load_data(sr_session_ctx_t * session,
+                     const char *       xpath,
+                     unsigned int       depth,
+                     sr_get_oper_flag_t flags,
+                     sr_data_t **       data)
 {
 	srplug_assert(session);
 	srplug_assert(xpath);
@@ -228,7 +265,7 @@ srplug_dat_load(sr_session_ctx_t * session,
 
 	sr_error_t ret;
 
-	ret = srepo_dat_load(session, xpath, depth, flags, data);
+	ret = srepo_dat_load_data(session, xpath, depth, flags, data);
 	if (ret == SR_ERR_OK)
 		return SR_ERR_OK;
 	else if (ret == SR_ERR_NO_MEMORY)

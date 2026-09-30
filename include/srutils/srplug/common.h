@@ -339,6 +339,10 @@ struct srplug_sub {
 	}
 
 extern sr_error_t
+srplug_apply_changes(sr_session_ctx_t * session)
+	__srplug_export;
+
+extern sr_error_t
 srplug_replace_config(sr_session_ctx_t * session,
                       const char *       module,
                       struct lyd_node *  tree)

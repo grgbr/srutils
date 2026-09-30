@@ -34,6 +34,19 @@ srepo_release_context(sr_session_ctx_t * session)
 	sr_session_release_context(session);
 }
 
+static inline sr_error_t
+srepo_apply_changes(sr_session_ctx_t * session)
+{
+	srepo_assert(session);
+
+	sr_error_t ret;
+
+	ret = sr_apply_changes(session, 0);
+	srepo_assert(ret != SR_ERR_INVAL_ARG);
+
+	return ret;
+}
+
 extern const char *
 srepo_dstore_str(sr_datastore_t ds)
 	__srepo_export;

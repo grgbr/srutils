@@ -171,6 +171,36 @@ srepo_dat_free_tree(struct lyd_node * tree)
 	lyd_free_tree(tree);
 }
 
+/**
+ * Prepare a batch of changes for merging.
+ *
+ * @param[in] session Session to prepare the batch of changes for
+ * @param[in] trees   List of top-level change / edit trees
+ */
+static inline sr_error_t
+srepo_dat_merge_batch(sr_session_ctx_t * session, const struct lyd_node * trees)
+{
+	srepo_assert(session);
+	srepo_assert(trees);
+
+	sr_error_t ret;
+
+	ret = sr_edit_batch(session, trees, "merge");
+	srepo_assert(ret != SR_ERR_INVAL_ARG);
+
+	return ret;
+}
+
+static inline sr_error_t
+srepo_dat_merge_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
+{
+	srepo_assert(session);
+	srepo_assert(data);
+	srepo_assert(data->tree);
+
+	return srepo_dat_merge_batch(session, data->tree);
+}
+
 /******************************************************************************
  * Searching for / loading YANG data nodes / trees.
  ******************************************************************************/
@@ -188,21 +218,37 @@ srepo_dat_free_tree(struct lyd_node * tree)
 	srepo_assert(((_flags) & (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG)) != \
 	             (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG))
 
+/* Iterate over a list of YANG trees. */
+#define srepo_dat_foreach_tree(_tree, _node) \
+	LY_LIST_FOR(_tree, _node)
+
 /* Iterate over a list of YANG data trees. */
-#define srepo_dat_foreach_tree(_data, _node) \
-	LY_LIST_FOR((_data)->tree, _node)
+#define srepo_dat_foreach_data_tree(_data, _node) \
+	srepo_dat_foreach_tree((_data)->tree, _node)
 
 /* Iterate over each node child. */
 #define srepo_dat_foreach_child(_node, _child) \
 	LY_LIST_FOR(lyd_child(_node), _child)
 
+/* Iterate over each data tree child node. */
+#define srepo_dat_foreach_data_child(_data, _child) \
+	srepo_dat_foreach_child((_data)->tree, _child)
+
 extern sr_error_t
-srepo_dat_load(sr_session_ctx_t * session,
-               const char *       xpath,
-               unsigned int       depth,
-               sr_get_oper_flag_t flags,
-               sr_data_t **       data)
+srepo_dat_load_data(sr_session_ctx_t * session,
+                    const char *       xpath,
+                    unsigned int       depth,
+                    sr_get_oper_flag_t flags,
+                    sr_data_t **       data)
 	__srepo_export;
+
+static inline void
+srepo_dat_release_data(sr_data_t * data)
+{
+	srepo_assert(data);
+
+	sr_release_data(data);
+}
 
 static inline sr_error_t
 srepo_dat_load_node(sr_session_ctx_t * session,
@@ -225,14 +271,6 @@ srepo_dat_load_node(sr_session_ctx_t * session,
 	srepo_assert(LYD_NODE_IS_ALONE((*data)->tree));
 
 	return SR_ERR_OK;
-}
-
-static inline void
-srepo_dat_release(sr_data_t * data)
-{
-	srepo_assert(data);
-
-	sr_release_data(data);
 }
 
 /******************************************************************************
