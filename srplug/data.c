@@ -247,7 +247,49 @@ srplug_dat_merge_batch(sr_session_ctx_t *      session,
 }
 
 /******************************************************************************
- * Searching for / loading YANG data nodes / trees.
+ * Searching YANG data nodes / trees.
+ ******************************************************************************/
+
+sr_error_t
+srplug_dat_find_path(const struct lyd_node * tree,
+                     const char *            path,
+                     struct lyd_node **      node)
+{
+	srplug_assert(tree);
+	srplug_assert(path);
+	srplug_assert(path[0]);
+	srplug_assert(node);
+
+	sr_error_t ret;
+
+	ret = srepo_dat_find_path(tree, path, node);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	return ret;
+}
+
+sr_error_t
+srplug_dat_find_vpathf(const struct lyd_node * tree,
+                       struct lyd_node **      node,
+                       const char *            format,
+                       va_list                 args)
+{
+	sr_error_t ret;
+
+	ret = srepo_dat_find_vpathf(tree, node, format, args);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	return ret;
+}
+
+/******************************************************************************
+ * Loading YANG data nodes / trees.
  ******************************************************************************/
 
 sr_error_t

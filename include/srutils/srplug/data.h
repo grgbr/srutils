@@ -82,14 +82,46 @@ srplug_dat_free_tree(struct lyd_node * tree)
 }
 
 /******************************************************************************
- * Searching for / loading YANG data nodes / trees.
+ * Searching YANG data nodes / trees.
  ******************************************************************************/
 
 extern sr_error_t
-srplug_dat_print_stdio_data(const sr_data_t * data,
-                            LYD_FORMAT        format,
-                            FILE *            stdio)
-	__srepo_export;
+srplug_dat_find_path(const struct lyd_node * tree,
+                     const char *            path,
+                     struct lyd_node **      node)
+	__srplug_export;
+
+extern sr_error_t
+srplug_dat_find_vpathf(const struct lyd_node * tree,
+                       struct lyd_node **      node,
+                       const char *            format,
+                       va_list                 args)
+	__srplug_export;
+
+static inline sr_error_t
+srplug_dat_find_pathf(const struct lyd_node * tree,
+                      struct lyd_node **      node,
+                      const char *            format,
+                      ...)
+{
+	srplug_assert(tree);
+	srplug_assert(node);
+	srplug_assert(format);
+	srplug_assert(format[0]);
+
+	va_list    args;
+	sr_error_t ret;
+
+	va_start(args, format);
+	ret = srplug_dat_find_vpathf(tree, node, format, args);
+	va_end(args);
+
+	return ret;
+}
+
+/******************************************************************************
+ * Loading YANG data nodes / trees.
+ ******************************************************************************/
 
 extern sr_error_t
 srplug_dat_load_data(sr_session_ctx_t * session,
@@ -133,6 +165,12 @@ srplug_dat_merge_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
  ******************************************************************************/
 
 #if defined(CONFIG_SRPLUG_PRINT)
+
+extern sr_error_t
+srplug_dat_print_stdio_data(const sr_data_t * data,
+                            LYD_FORMAT        format,
+                            FILE *            stdio)
+	__srepo_export;
 
 extern sr_error_t
 srplug_dat_print_data(const sr_data_t * data,

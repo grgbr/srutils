@@ -34,6 +34,17 @@ srepo_release_context(sr_session_ctx_t * session)
 	sr_session_release_context(session);
 }
 
+static inline void
+srepo_switch_dstore(sr_session_ctx_t * session, sr_datastore_t dstore)
+{
+	srepo_assert(session);
+
+	sr_error_t ret __unused;
+
+	ret = sr_session_switch_ds(session, dstore);
+	srepo_assert(ret == SR_ERR_OK);
+}
+
 static inline sr_error_t
 srepo_apply_changes(sr_session_ctx_t * session)
 {

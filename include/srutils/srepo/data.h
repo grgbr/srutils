@@ -145,13 +145,31 @@ srepo_dat_create_leaf_vprintf(struct lyd_node *  parent,
                               va_list            args)
 	__srepo_export;
 
-extern sr_error_t
+static inline sr_error_t
 srepo_dat_create_leaf_printf(struct lyd_node *  parent,
                              const char *       path,
                              struct lyd_node ** leaf,
                              const char *       format,
                              ...)
-	__srepo_export;
+{
+	srepo_assert(parent);
+	srepo_assert(path);
+	srepo_assert(path[0]);
+	srepo_assert(format);
+
+	va_list args;
+	int     ret;
+
+	va_start(args, format);
+	ret = srepo_dat_create_leaf_vprintf(parent,
+	                                    path,
+	                                    leaf,
+	                                    format,
+	                                    args);
+	va_end(args);
+
+	return ret;
+}
 
 #define SREPO_DAT_IMPLICIT_OPTS \
 	(LYD_IMPLICIT_NO_STATE | \
@@ -202,7 +220,45 @@ srepo_dat_merge_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
 }
 
 /******************************************************************************
- * Searching for / loading YANG data nodes / trees.
+ * Searching YANG data nodes / trees.
+ ******************************************************************************/
+
+extern sr_error_t
+srepo_dat_find_path(const struct lyd_node * tree,
+                    const char *            path,
+                    struct lyd_node **      node)
+	__srepo_export;
+
+extern sr_error_t
+srepo_dat_find_vpathf(const struct lyd_node * tree,
+                      struct lyd_node **      node,
+                      const char *            format,
+                      va_list                 args)
+	__srepo_export;
+
+static inline sr_error_t
+srepo_dat_find_pathf(const struct lyd_node * tree,
+                     struct lyd_node **      node,
+                     const char *            format,
+                     ...)
+{
+	srepo_assert(tree);
+	srepo_assert(node);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	va_list    args;
+	sr_error_t ret;
+
+	va_start(args, format);
+	ret = srepo_dat_find_vpathf(tree, node, format, args);
+	va_end(args);
+
+	return ret;
+}
+
+/******************************************************************************
+ * Loading YANG data nodes / trees.
  ******************************************************************************/
 
 #define srepo_dat_assert_flags(_flags) \
