@@ -241,7 +241,29 @@ srplug_dat_merge_batch(sr_session_ctx_t *      session,
 	else if (ret == SR_ERR_NO_MEMORY)
 		srplug_abort();
 
-	srplug_notice("cannot prepare changes batch: %s", sr_strerror(ret));
+	srplug_notice("cannot prepare changes merge batch: %s",
+	              sr_strerror(ret));
+
+	return ret;
+}
+
+sr_error_t
+srplug_dat_replace_batch(sr_session_ctx_t *      session,
+                         const struct lyd_node * trees)
+{
+	srplug_assert(session);
+	srplug_assert(trees);
+
+	sr_error_t ret;
+
+	ret = srepo_dat_replace_batch(session, trees);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	srplug_notice("cannot prepare changes replacement batch: %s",
+	              sr_strerror(ret));
 
 	return ret;
 }

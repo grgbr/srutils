@@ -160,6 +160,22 @@ srplug_dat_merge_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
 	return srplug_dat_merge_batch(session, data->tree);
 }
 
+extern sr_error_t
+srplug_dat_replace_batch(sr_session_ctx_t *      session,
+                         const struct lyd_node * trees)
+	__srplug_export;
+
+static inline sr_error_t
+srplug_dat_replace_data_batch(sr_session_ctx_t * session,
+                              const sr_data_t *  data)
+{
+	srplug_assert(session);
+	srplug_assert(data);
+	srplug_assert(data->tree);
+
+	return srplug_dat_replace_batch(session, data->tree);
+}
+
 /******************************************************************************
  * Debugging / printing YANG data nodes / trees.
  ******************************************************************************/
