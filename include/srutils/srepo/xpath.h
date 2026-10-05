@@ -3,6 +3,7 @@
 
 #include <srutils/srepo/common.h>
 #include <sysrepo/xpath.h>
+#include <stdarg.h>
 
 /******************************************************************************
  * XPATH parsing logic.
@@ -32,7 +33,7 @@ static inline __srepo_nonull(1) __warn_result
 ssize_t
 srepo_xpath_validate_key(const char * key)
 {
-	return srepo_validate_strlen(node, SREPO_XPATH_KEY_SIZE);
+	return srepo_validate_strlen(key, SREPO_XPATH_KEY_SIZE);
 }
 
 static inline __srepo_nonull(1, 2, 3, 4) __warn_result
@@ -43,8 +44,8 @@ srepo_xpath_key_value(char *           xpath,
                       sr_xpath_ctx_t * context)
 {
 	srepo_assert(srepo_xpath_validate(xpath) > 0);
-	srepo_assert(srepo_xpath_validate_node(xpath) > 0);
-	srepo_assert(srepo_xpath_validate_key(xpath) > 0);
+	srepo_assert(srepo_xpath_validate_node(node) > 0);
+	srepo_assert(srepo_xpath_validate_key(key) > 0);
 	srepo_assert(context);
 
 	return sr_xpath_key_value(xpath, node, key, context);
@@ -84,16 +85,19 @@ srepo_xpath_printf(char * __restrict       xpath,
                    ...)
 	__srepo_nonull(1, 3) __printf(3, 4) __srepo_export;
 
-static __malloc(srepo_free, 1)
+static __returns_nonull __warn_result
 void *
 srepo_xpath_alloc(void)
 {
-	return srepo_malloc(SREPO_PATH_SIZE);
+	return srepo_malloc(SREPO_XPATH_SIZE);
 }
 
 extern char *
 srepo_xpath_create(const char * __restrict xpath, size_t length)
-	__srepo_nonull(1) __malloc(srepo_free, 1) __srepo_export;
+	__srepo_nonull(1) \
+	__returns_nonull \
+	__warn_result \
+	__srepo_export;
 
 extern ssize_t
 srepo_xpath_vcreatef(char ** __restrict      xpath,
@@ -111,7 +115,8 @@ srepo_xpath_createf(char ** __restrict      xpath,
 	srepo_assert(format);
 	srepo_assert(format[0]);
 
-	int len;
+	va_list args;
+	int     len;
 
 	va_start(args, format);
 	len = srepo_xpath_vcreatef(xpath, format, args);

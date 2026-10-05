@@ -1,5 +1,4 @@
 #include "srutils/srepo/schema.h"
-#include <sysrepo.h>
 
 sr_error_t
 srepo_sch_feature_status(const struct lys_module * module,

@@ -20,7 +20,7 @@ srplug_dat_path(const struct lyd_node * node)
 
 	char * path;
 
-	path = srepo_dat_path(node);
+	path = srepo_dat_node_path(node);
 	if (!path)
 		srplug_abort();
 

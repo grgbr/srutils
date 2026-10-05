@@ -15,13 +15,19 @@ common-cflags      := $(filter-out -DNDEBUG,$(common-cflags))
 common-ldflags     := $(filter-out -DNDEBUG,$(common-ldflags))
 endif # ($(filter y,$(CONFIG_SREPO_ASSERT)),)
 
+libsrepo-objs       := schema.o
+libsrepo-objs       += data.o
+libsrepo-objs       += xpath.o
+libsrepo-objs       += $(call kconf_enabled,SREPO_LOG,log.o)
+libsrepo-objs       += common.o
+
 arlibs              := libsrepo.a
-libsrepo.a-objs     := static/schema.o static/data.o static/common.o
+libsrepo.a-objs     := $(addprefix static/,$(libsrepo-objs))
 libsrepo.a-cflags   := $(common-cflags)
 libsrepo.a-pkgconf  := sysrepo libyang libstroll
 
 solibs              := libsrepo.so
-libsrepo.so-objs    := shared/schema.o shared/data.o shared/common.o
+libsrepo.so-objs    := $(addprefix shared/,$(libsrepo-objs))
 libsrepo.so-cflags  := $(filter-out -fpie -fPIE,$(common-cflags)) -fpic
 libsrepo.so-ldflags := $(filter-out -pie -fpie -fPIE,$(common-ldflags)) \
                        -shared -Bsymbolic -fpic -Wl,-soname,libsrepo.so
