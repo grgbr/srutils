@@ -77,6 +77,8 @@ srepo_dat_new_path(const struct ly_ctx * context,
 	ret = lyd_new_path(parent, context, path, value, options, nevv);
 	srepo_assert(ret != LY_EINVAL);
 	srepo_assert(ret != LY_EVALID);
+	if (ret == LY_EMEM)
+		srepo_abort();
 
 	return ret;
 }
