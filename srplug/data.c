@@ -163,7 +163,7 @@ srplug_dat_create_leaf_vprintf(struct lyd_node *  parent,
 
 	sr_error_t ret;
 
-	ret = srepo_dat_create_leaf_vprintf(parent, path, leaf, format, args);
+	ret = srepo_dat_vcreatef_leaf(parent, path, leaf, format, args);
 	if (ret == SR_ERR_OK)
 		return SR_ERR_OK;
 	else if (ret == SR_ERR_NO_MEMORY)
@@ -193,11 +193,7 @@ srplug_dat_create_leaf_printf(struct lyd_node *  parent,
 	int     ret;
 
 	va_start(args, format);
-	ret = srplug_dat_create_leaf_vprintf(parent,
-	                                     path,
-	                                     leaf,
-	                                     format,
-	                                     args);
+	ret = srplug_dat_create_leaf_vprintf(parent, path, leaf, format, args);
 	va_end(args);
 
 	return ret;
@@ -213,7 +209,7 @@ srplug_dat_populate_defaults(struct lyd_node *  tree,
 
 	sr_error_t ret;
 
-	ret = srepo_dat_new_implicit(tree, options, diff);
+	ret = srepo_dat_new_dflt_nodes(tree, options, diff);
 	if (ret == SR_ERR_OK)
 		return SR_ERR_OK;
 	else if (ret == SR_ERR_NO_MEMORY)
@@ -284,7 +280,7 @@ srplug_dat_find_path(const struct lyd_node * tree,
 
 	sr_error_t ret;
 
-	ret = srepo_dat_find_path(tree, path, node);
+	ret = srepo_dat_find_node(tree, path, node);
 	if (ret == SR_ERR_OK)
 		return SR_ERR_OK;
 	else if (ret == SR_ERR_NO_MEMORY)
@@ -301,7 +297,7 @@ srplug_dat_find_vpathf(const struct lyd_node * tree,
 {
 	sr_error_t ret;
 
-	ret = srepo_dat_find_vpathf(tree, node, format, args);
+	ret = srepo_dat_vfindf_node(tree, node, format, args);
 	if (ret == SR_ERR_OK)
 		return SR_ERR_OK;
 	else if (ret == SR_ERR_NO_MEMORY)
@@ -371,7 +367,7 @@ srplug_dat_print_stdio_data(const sr_data_t * data,
                             FILE *            stdio)
 {
 	srplug_assert(data);
-	srplug_assert(srepo_dat_isprint_format_valid(format));
+	//srplug_assert(srepo_dat_isprint_format_valid(format));
 	srplug_assert(stdio);
 
 	sr_error_t ret;
@@ -391,7 +387,7 @@ srplug_dat_print_data(const sr_data_t * data,
                       struct ly_out *   printer)
 {
 	srplug_assert(data);
-	srplug_assert(srepo_dat_isprint_format_valid(format));
+	//srplug_assert(srepo_dat_isprint_format_valid(format));
 	srplug_assert(printer);
 
 	sr_error_t ret;

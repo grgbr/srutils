@@ -1,26 +1,71 @@
-#include "srutils/srepo/common.h"
-#include "srutils/srepo/log.h"
+#include "common.h"
 
-int
-srepo_asprintf(char ** string, const char * format, ...)
+sr_error_t
+srepo_ly_error(LY_ERR error)
 {
-	srepo_assert(string);
-	srepo_assert(format);
-
-	va_list args;
-	int     ret;
-
-	va_start(args, format);
-	ret = srepo_vasprintf(string, format, args);
-	va_end(args);
-
-	if (ret < 0) {
-		if (errno == ENOMEM)
-			abort();
-		return -errno;
+	switch (error) {
+	case LY_SUCCESS:
+		return SR_ERR_OK;
+	case LY_EMEM:
+		return SR_ERR_NO_MEMORY;
+	case LY_ESYS:
+		return SR_ERR_SYS;
+	case LY_EINVAL:
+		return SR_ERR_INVAL_ARG;
+	case LY_EEXIST:
+		return SR_ERR_EXISTS;
+	case LY_ENOTFOUND:
+		return SR_ERR_NOT_FOUND;
+	case LY_EVALID:
+		return SR_ERR_VALIDATION_FAILED;
+	case LY_EDENIED:
+		return SR_ERR_OPERATION_FAILED;
+	case LY_EINT:
+	case LY_EINCOMPLETE:
+	case LY_ERECOMPILE:
+	case LY_ENOT:
+	case LY_EOTHER:
+	case LY_EPLUGIN:
+		return SR_ERR_LY;
+	default:
+		srepo_assert(0);
+		return SR_ERR_LY;
 	}
+}
 
-	return ret;
+sr_error_t
+srepo_sys_error(int error)
+{
+	switch (error) {
+	case 0:
+		return SR_ERR_OK;
+	case -ENODEV:
+	case -ENOENT:
+		return SR_ERR_NOT_FOUND;
+	case -EINVAL:
+	case -ENODATA:
+	case -ENAMETOOLONG:
+		return SR_ERR_INVAL_ARG;
+	case -ENOTSUP:
+		return SR_ERR_UNSUPPORTED;
+	case -EPERM:
+		return SR_ERR_OPERATION_FAILED;
+	case -EACCES:
+		return SR_ERR_UNAUTHORIZED;
+	case -ETIME:
+	case -ETIMEDOUT:
+		return SR_ERR_TIME_OUT;
+	case -ENOLCK:
+	case -EDEADLOCK:
+		return SR_ERR_LOCKED;
+	case -EAGAIN:
+		return SR_ERR_CALLBACK_SHELVE;
+	case -ENOMEM:
+		return SR_ERR_NO_MEMORY;
+	case -EIO:
+	default:
+		return SR_ERR_SYS;
+	}
 }
 
 sr_error_t
@@ -42,10 +87,6 @@ srepo_acquire_context(sr_session_ctx_t *     session,
 		srepo_assert(einfo->err->err_code != SR_ERR_OK);
 		if (einfo->err->err_code == SR_ERR_NO_MEMORY)
 			srepo_abort();
-
-		srepo_sess_info(session,
-		                "cannot acquire context: %s",
-		                sr_strerror(einfo->err->err_code));
 
 		return einfo->err->err_code;
 	}
@@ -90,9 +131,6 @@ srepo_apply_changes(sr_session_ctx_t * session)
 	if (err == SR_ERR_NO_MEMORY)
 		srepo_abort();
 
-	srepo_sess_notice(session,
-	                  "cannot apply changes: %s",
-	                  sr_strerror(err));
 	return err;
 }
 
@@ -119,8 +157,21 @@ srepo_replace_config(sr_session_ctx_t * session,
 	if (err == SR_ERR_NO_MEMORY)
 		srepo_abort();
 
-	srepo_sess_notice(session,
-	                  "cannot replace configuration datastore: %s",
-	                  sr_strerror(err));
 	return err;
+}
+
+sr_error_t
+srepo_open_stdio_print(struct ly_out ** printer, FILE * stdio)
+{
+	srepo_assert(printer);
+	srepo_assert(stdio);
+
+	LY_ERR ret;
+
+	ret = ly_out_new_file(stdio, printer);
+	srepo_assert(ret != LY_EINVAL);
+	if (ret == LY_EMEM)
+		srepo_abort();
+
+	return srepo_ly_error(ret);
 }

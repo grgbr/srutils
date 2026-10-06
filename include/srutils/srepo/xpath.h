@@ -3,7 +3,6 @@
 
 #include <srutils/srepo/common.h>
 #include <sysrepo/xpath.h>
-#include <stdarg.h>
 
 /******************************************************************************
  * XPATH parsing logic.
