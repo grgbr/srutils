@@ -24,13 +24,17 @@ libsrepo-objs       += common.o
 arlibs              := libsrepo.a
 libsrepo.a-objs     := $(addprefix static/,$(libsrepo-objs))
 libsrepo.a-cflags   := $(common-cflags)
-libsrepo.a-pkgconf  := sysrepo libyang libstroll
+libsrepo.a-pkgconf  := sysrepo libyang \
+                       $(call kconf_enabled,SREPO_LOG,libelog) \
+                       libstroll
 
 solibs              := libsrepo.so
 libsrepo.so-objs    := $(addprefix shared/,$(libsrepo-objs))
 libsrepo.so-cflags  := $(filter-out -fpie -fPIE,$(common-cflags)) -fpic
 libsrepo.so-ldflags := $(filter-out -pie -fpie -fPIE,$(common-ldflags)) \
                        -shared -Bsymbolic -fpic -Wl,-soname,libsrepo.so
-libsrepo.so-pkgconf := sysrepo libyang libstroll
+libsrepo.so-pkgconf := sysrepo libyang \
+                       $(call kconf_enabled,SREPO_LOG,libelog) \
+                       libstroll
 
 # ex: filetype=make :

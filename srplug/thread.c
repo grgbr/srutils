@@ -114,7 +114,7 @@ srplug_waker_open(struct srplug_waker_work * waker, const struct upoll * poller)
 	                              srplug_waker_dispatch);
 	if (ret) {
 		if (ret == -ENOMEM)
-			srplug_abort();
+			srepo_abort();
 
 		msg = "cannot register";
 		goto close;
@@ -214,7 +214,7 @@ srplug_thread_start(struct srplug_thread * thread)
 	err = uthr_attr_set_sigmask(&attr, &msk);
 	if (err) {
 		srplug_assert(err == -ENOMEM);
-		srplug_abort();
+		srepo_abort();
 	}
 
 	/* Spawn thread. */
@@ -334,7 +334,7 @@ srplug_thread_init(struct srplug_thread * thread, unsigned int poll_nr)
 	err = uthr_init_cond(&thread->cond, CLOCK_MONOTONIC);
 	if (err) {
 		if (err == -ENOMEM);
-			srplug_abort();
+			srepo_abort();
 
 		srplug_thread_err(
 			"cannot initialize thread state condition: %s",

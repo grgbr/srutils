@@ -133,3 +133,83 @@ srepo_xpath_vcreatef(char ** __restrict      xpath,
 
 	return len;
 }
+
+/******************************************************************************
+ * XPATH logging.
+ ******************************************************************************/
+
+#if defined(CONFIG_SREPO_LOG)
+
+void
+srepo_xpath_vlog(const char * __restrict xpath,
+                 enum elog_severity      severity,
+                 const char * __restrict prefix,
+                 const char * __restrict format,
+                 va_list                 args)
+{
+	srepo_assert(srepo_logger);
+	srepo_assert(srepo_xpath_validate(xpath) > 0);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	char * fmt;
+	int    ret;
+
+	ret = srepo_asprintf( &fmt, "%s[path:%s]: %s.", prefix, xpath, format);
+	if (ret > 0) {
+		elog_vlog(srepo_logger, severity, fmt, args);
+		srepo_free(fmt);
+	}
+	else
+		elog_log(srepo_logger,
+		         ELOG_WARNING_SEVERITY,
+		         "%s%slogging failure: %s.",
+		         prefix,
+		         prefix[0] ? ": " : "",
+		         strerror(-ret));
+}
+
+void
+srepo_xpath_vlog_sess(const sr_session_ctx_t * __restrict session,
+                      const char * __restrict             xpath,
+                      enum elog_severity                  severity,
+                      const char * __restrict             prefix,
+                      const char * __restrict             format,
+                      va_list                             args)
+{
+	srepo_assert(srepo_logger);
+	srepo_assert(session);
+	srepo_assert(srepo_xpath_validate(xpath) > 0);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	char * fmt;
+	int    ret;
+
+	ret = srepo_asprintf(
+		&fmt,
+		"%s[conn:%" PRIu32 "|sess:%" PRIu32 "|ds:%s|path:%s]: %s.",
+		prefix,
+		sr_get_cid(sr_session_get_connection((sr_session_ctx_t *)
+		                                     session)),
+		sr_session_get_id((sr_session_ctx_t *)session),
+		srepo_dstore_str(sr_session_get_ds((sr_session_ctx_t *)
+		                                   session)),
+		xpath,
+		format);
+	if (ret > 0) {
+		elog_vlog(srepo_logger, severity, fmt, args);
+		srepo_free(fmt);
+	}
+	else
+		elog_log(srepo_logger,
+		         ELOG_WARNING_SEVERITY,
+		         "%s%slogging failure: %s.",
+		         prefix,
+		         prefix[0] ? ": " : "",
+		         strerror(-ret));
+}
+
+#endif /* defined(CONFIG_SREPO_LOG) */

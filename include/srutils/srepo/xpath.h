@@ -1,7 +1,7 @@
 #ifndef _SREPO_XPATH_H
 #define _SREPO_XPATH_H
 
-#include <srutils/srepo/common.h>
+#include <srutils/srepo/priv/xpath.h>
 #include <sysrepo/xpath.h>
 
 /******************************************************************************
@@ -84,7 +84,7 @@ srepo_xpath_printf(char * __restrict       xpath,
                    ...)
 	__srepo_nonull(1, 3) __printf(3, 4) __srepo_export;
 
-static __returns_nonull __warn_result
+static inline __returns_nonull __warn_result
 void *
 srepo_xpath_alloc(void)
 {
@@ -123,5 +123,186 @@ srepo_xpath_createf(char ** __restrict      xpath,
 
 	return (ssize_t)len;
 }
+
+/******************************************************************************
+ * XPATH logging.
+ ******************************************************************************/
+
+#if defined(CONFIG_SREPO_LOG)
+
+static inline __srepo_nonull(1, 3, 4) __printf(4, 5)
+void
+srepo_xpath_log(const char * __restrict xpath,
+                enum elog_severity      severity,
+                const char * __restrict prefix,
+                const char * __restrict format,
+                ...)
+{
+	srepo_assert(xpath);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	if (srepo_logger) {
+		va_list args;
+
+		va_start(args, format);
+		srepo_xpath_vlog(xpath, severity, prefix, format, args);
+		va_end(args);
+	}
+}
+
+#define srepo_xpath_err(_xpath, _fmt, ...) \
+	srepo_xpath_log(_xpath, \
+	                ELOG_ERR_SEVERITY, \
+	                "srepo", \
+	                _fmt, \
+	                ## __VA_ARGS__)
+
+#define srepo_xpath_warn(_xpath, _fmt, ...) \
+	srepo_xpath_log(_xpath, \
+	                ELOG_WARNING_SEVERITY, \
+	                "srepo", \
+	                _fmt, \
+	                ## __VA_ARGS__)
+
+#define srepo_xpath_notice(_xpath, _fmt, ...) \
+	srepo_xpath_log(_xpath, \
+	                ELOG_NOTICE_SEVERITY, \
+	                "srepo", \
+	                _fmt, \
+	                ## __VA_ARGS__)
+
+#define srepo_xpath_info(_xpath, _fmt, ...) \
+	srepo_xpath_log(_xpath, \
+	                ELOG_INFO_SEVERITY, \
+	                "srepo", \
+	                _fmt, \
+	                ## __VA_ARGS__)
+
+#if defined(CONFIG_SREPO_DEBUG)
+
+#define srepo_xpath_debug(_xpath, _fmt, ...) \
+	srepo_xpath_log(_xpath, \
+	                ELOG_DEBUG_SEVERITY, \
+	                "srepo", \
+	                _fmt, \
+	                ## __VA_ARGS__)
+
+#endif /* defined(CONFIG_SREPO_DEBUG) */
+
+static inline __srepo_nonull(1, 2, 4, 5) __printf(5, 6)
+void
+srepo_xpath_log_sess(const sr_session_ctx_t * __restrict session,
+                     const char * __restrict             xpath,
+                     enum elog_severity                  severity,
+                     const char * __restrict             prefix,
+                     const char * __restrict             format,
+                     ...)
+{
+	srepo_assert(session);
+	srepo_assert(xpath);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	if (srepo_logger) {
+		va_list args;
+
+		va_start(args, format);
+		srepo_xpath_vlog_sess(session,
+		                      xpath,
+		                      severity,
+		                      prefix,
+		                      format,
+		                      args);
+		va_end(args);
+	}
+}
+
+#define srepo_xpath_sess_err(_sess, _xpath, _fmt, ...) \
+	srepo_xpath_log_sess(_sess, \
+	                     _xpath, \
+	                     ELOG_ERR_SEVERITY, \
+	                     "srepo", \
+	                     _fmt, \
+	                     ## __VA_ARGS__)
+
+#define srepo_xpath_sess_warn(_sess, _xpath, _fmt, ...) \
+	srepo_xpath_log_sess(_sess, \
+	                     _xpath, \
+	                     ELOG_WARNING_SEVERITY, \
+	                     "srepo", \
+	                     _fmt, \
+	                     ## __VA_ARGS__)
+
+#define srepo_xpath_sess_notice(_sess, _xpath, _fmt, ...) \
+	srepo_xpath_log_sess(_sess, \
+	                     _xpath, \
+	                     ELOG_NOTICE_SEVERITY, \
+	                     "srepo", \
+	                     _fmt, \
+	                     ## __VA_ARGS__)
+
+#define srepo_xpath_sess_info(_sess, _xpath, _fmt, ...) \
+	srepo_xpath_log_sess(_sess, \
+	                     _xpath, \
+	                     ELOG_INFO_SEVERITY, \
+	                     "srepo", \
+	                     _fmt, \
+	                     ## __VA_ARGS__)
+
+#if defined(CONFIG_SREPO_DEBUG)
+
+#define srepo_xpath_sess_debug(_sess, _xpath, _fmt, ...) \
+	srepo_xpath_log_sess(_sess, \
+	                     _xpath, \
+	                     ELOG_DEBUG_SEVERITY, \
+	                     "srepo", \
+	                     _fmt, \
+	                     ## __VA_ARGS__)
+
+#endif /* defined(CONFIG_SREPO_DEBUG) */
+
+#else  /* !defined(CONFIG_SREPO_LOG) */
+
+static inline __srepo_nonull(1, 3, 4) __printf(4, 5)
+void
+srepo_xpath_log(const char * __restrict xpath __unused,
+                enum elog_severity      severity __unused,
+                const char * __restrict prefix __unused,
+                const char * __restrict format __unused,
+                ...)
+{
+}
+
+#define srepo_xpath_err(_xpath, _fmt, ...)
+#define srepo_xpath_warn(_xpath, _fmt, ...)
+#define srepo_xpath_notice(_xpath, _fmt, ...)
+#define srepo_xpath_info(_xpath, _fmt, ...)
+#if defined(CONFIG_SREPO_DEBUG)
+#define srepo_xpath_debug(_xpath, _fmt, ...)
+#endif /* defined(CONFIG_SREPO_DEBUG) */
+
+static inline __srepo_nonull(1, 2, 4, 5) __printf(5, 0)
+void
+srepo_xpath_log_sess(const sr_session_ctx_t * __restrict session __unused,
+                     const char * __restrict             xpath __unused,
+                     enum elog_severity                  severity __unused,
+                     const char * __restrict             prefix __unused,
+                     const char * __restrict             format __unused,
+                     va_list                             args __unused)
+{
+}
+
+#define srepo_xpath_sess_err(_sess, _xpath, _fmt, ...)
+#define srepo_xpath_sess_warn(_sess, _xpath, _fmt, ...)
+#define srepo_xpath_sess_notice(_sess, _xpath, _fmt, ...)
+#define srepo_xpath_sess_info(_sess, _xpath, _fmt, ...)
+#if defined(CONFIG_SREPO_DEBUG)
+#define srepo_xpath_sess_debug(_sess, _xpath, _fmt, ...)
+#endif /* defined(CONFIG_SREPO_DEBUG) */
+
+#endif /* defined(CONFIG_SREPO_LOG) */
 
 #endif /* _SREPO_XPATH_H */

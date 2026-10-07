@@ -3,6 +3,7 @@
 
 #include <srutils/priv/config.h>
 #include <srutils/srepo/common.h>
+#include <stdbool.h>
 
 #define __srplug_export __export_public
 
@@ -10,203 +11,39 @@
 
 #include <stroll/assert.h>
 
+#define __srplug_nonull(...)
+
 #define srplug_assert(_cond) \
 	stroll_assert("srplug", _cond)
 
 #else  /* !defined(CONFIG_SRPLUG_ASSERT) */
 
+#define __srplug_nonull(...) \
+	__nonull(__VA_ARGS__)
+
 #define srplug_assert(_cond)
 
 #endif /* defined(CONFIG_SRPLUG_ASSERT) */
 
-#if defined(CONFIG_SRPLUG_LOG)
-
-#include <elog/elog.h>
-
-#define srplug_path_log(_svrt, _path, _fmt, ...) \
-	srplug_log(_svrt, "%s: " _fmt, _path, ## __VA_ARGS__)
-
-#define srplug_path_err(_path, _fmt, ...) \
-	srplug_path_log(ELOG_ERR_SEVERITY, _path, _fmt, ## __VA_ARGS__)
-
-#define srplug_path_warn(_path, _fmt, ...) \
-	srplug_path_log(ELOG_WARNING_SEVERITY, _path, _fmt, ## __VA_ARGS__)
-
-#define srplug_path_notice(_path, _fmt, ...) \
-	srplug_path_log(ELOG_NOTICE_SEVERITY, _path, _fmt, ## __VA_ARGS__)
-
-#define srplug_path_info(_path, _fmt, ...) \
-	srplug_path_log(ELOG_INFO_SEVERITY, _path, _fmt, ## __VA_ARGS__)
-
-#if defined(CONFIG_SRPLUG_DEBUG)
-
-#define srplug_path_debug(_path, _fmt, ...) \
-	srplug_path_log(ELOG_DEBUG_SEVERITY, _path, _fmt, ## __VA_ARGS__)
-
-#endif /* defined(CONFIG_SRPLUG_DEBUG) */
-
-#define srplug_node_log(_svrt, _node, _fmt, ...) \
-	srplug_path_log(_svrt, srplug_dat_path(_node), _fmt, ## __VA_ARGS__)
-
-#define srplug_node_err(_node, _fmt, ...) \
-	srplug_node_log(ELOG_ERR_SEVERITY, _node, _fmt, ## __VA_ARGS__)
-
-#define srplug_node_warn(_node, _fmt, ...) \
-	srplug_node_log(ELOG_WARNING_SEVERITY, _node, _fmt, ## __VA_ARGS__)
-
-#define srplug_node_notice(_node, _fmt, ...) \
-	srplug_node_log(ELOG_NOTICE_SEVERITY, _node, _fmt, ## __VA_ARGS__)
-
-#define srplug_node_info(_node, _fmt, ...) \
-	srplug_node_log(ELOG_INFO_SEVERITY, _node, _fmt, ## __VA_ARGS__)
-
-#if defined(CONFIG_SRPLUG_DEBUG)
-
-#define srplug_node_debug(_node, _fmt, ...) \
-	srplug_node_log(ELOG_DEBUG_SEVERITY, _node, _fmt, ## __VA_ARGS__)
-
-#endif /* defined(CONFIG_SRPLUG_DEBUG) */
-
-#define srplug_pnode_log(_svrt, _node, _path, _fmt, ...) \
-	({ \
-		enum elog_severity      __svrt = _svrt; \
-		const struct lyd_node * __node = _node; \
-		const char *            __path = _path; \
-		\
-		__node ? srplug_log(__svrt, \
-		                    "%s/%s: " _fmt, \
-		                    srplug_dat_path(__node), \
-		                    __path, \
-		                    ## __VA_ARGS__) \
-		       : srplug_path_log(__svrt, \
-		                         __path, \
-		                         _fmt, \
-		                         ## __VA_ARGS__); \
-	 })
-
-#define srplug_pnode_err(_node, _path, _fmt, ...) \
-	srplug_pnode_log(ELOG_ERR_SEVERITY, \
-	                 _node, \
-	                 _path, \
-	                 _fmt, \
-	                 ## __VA_ARGS__)
-
-#define srplug_pnode_warn(_node, _path, _fmt, ...) \
-	srplug_pnode_log(ELOG_WARNING_SEVERITY, \
-	                 _node, \
-	                 _path, \
-	                 _fmt, \
-	                 ## __VA_ARGS__)
-
-#define srplug_pnode_notice(_node, _path, _fmt, ...) \
-	srplug_pnode_log(ELOG_NOTICE_SEVERITY, \
-	                 _node, \
-	                 _path, \
-	                 _fmt, \
-	                 ## __VA_ARGS__)
-
-#define srplug_pnode_info(_node, _path, _fmt, ...) \
-	srplug_pnode_log(ELOG_INFO_SEVERITY, \
-	                 _node, \
-	                 _path, \
-	                 _fmt, \
-	                 ## __VA_ARGS__)
-
-#if defined(CONFIG_SRPLUG_DEBUG)
-
-#define srplug_pnode_debug(_node, _path, _fmt, ...) \
-	srplug_pnode_log(ELOG_DEBUG_SEVERITY, \
-	                 _node, \
-	                 _path, \
-	                 _fmt, \
-	                 ## __VA_ARGS__)
-
-#endif /* defined(CONFIG_SRPLUG_DEBUG) */
-
-#else  /* !defined(CONFIG_SRPLUG_LOG) */
-
-#define srplug_path_log(_svrt, _path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_path_err(_path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_path_warn(_path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_path_notice(_path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_path_info(_path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_path_debug(_path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_node_log(_svrt, _node, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_node_err(_node, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_node_warn(_node, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_node_notice(_node, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_node_info(_node, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_node_debug(_node, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_pnode_log(_svrt, _node, _path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_pnode_err(_node, _path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_pnode_warn(_node, _path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_pnode_notice(_node, _path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_pnode_info(_node, _path, _fmt, ...) \
-	do { } while (0)
-
-#define srplug_pnode_debug(_node, _path, _fmt, ...) \
-	do { } while (0)
-
-#endif /* defined(CONFIG_SRPLUG_LOG) */
-
-extern char *
-srplug_strdup(const char * string)
-	__srplug_export;
-
-static inline void
-srplug_free(void * data)
-{
-	free(data);
-}
-
 #if defined(SRPLUG_DEBUG)
 
 extern sr_error_t
-srplug_change_debug(const struct lyd_node * node,
-                    sr_change_oper_t        oper,
-                    const char *            old,
-                    void *                  data)
-	__srplug_export;
+srplug_change_debug(const sr_session_ctx_t * session,
+                    const struct lyd_node *  node,
+                    sr_change_oper_t         oper,
+                    const char *             old,
+                    void *                   data)
+	__srplug_nonull(1, 2) __srplug_export;
 
 #else  /* !defined(SRPLUG_DEBUG) */
 
-static inline sr_error_t
-srplug_change_debug(const struct lyd_node * node __unused,
-                    sr_change_oper_t        oper __unused,
-                    const char *            old __unused,
-                    void *                  data __unused)
+static inline __nonull(1, 2)
+sr_error_t
+srplug_change_debug(const sr_session_ctx_t * session __unused,
+                    const struct lyd_node *  node __unused,
+                    sr_change_oper_t         oper __unused,
+                    const char *             old __unused,
+                    void *                   data __unused)
 {
 	return SR_ERR_OK;
 }
@@ -216,7 +53,8 @@ srplug_change_debug(const struct lyd_node * node __unused,
 /**
  * Configuration data change handler function signature.
  */
-typedef sr_error_t srplug_handle_change_fn(const struct lyd_node *,
+typedef sr_error_t srplug_handle_change_fn(sr_session_ctx_t *,
+                                           const struct lyd_node *,
                                            sr_change_oper_t,
                                            const char *,
                                            void *);
@@ -230,7 +68,7 @@ srplug_handle_changes(sr_session_ctx_t *        session,
                       const char *              xpath,
                       srplug_handle_change_fn * handle,
                       void *                    data)
-	__srplug_export;
+	__srplug_nonull(1, 2, 3) __srplug_export;
 
 /**
  * Configuration data change HaNDLeR.
@@ -258,7 +96,7 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
                              const struct srplug_change_hndlr * handlers,
                              unsigned int                       nr,
                              void *                             data)
-	__srplug_export;
+	__srplug_nonull(1, 2, 3) __srplug_export;
 
 struct srplug_change_sub {
 	const char *               module;
@@ -338,20 +176,6 @@ struct srplug_sub {
 		} \
 	}
 
-extern sr_error_t
-srplug_apply_changes(sr_session_ctx_t * session)
-	__srplug_export;
-
-extern sr_error_t
-srplug_replace_config(sr_session_ctx_t * session,
-                      const char *       module,
-                      struct lyd_node *  tree)
-	__srplug_export;
-
-extern const struct lys_module *
-srplug_find_module(const struct ly_ctx * context, const char * module)
-	__srplug_export;
-
 struct srplug_feat {
 	const char * const name;
 	bool               on;
@@ -368,19 +192,5 @@ srplug_probe_feature(const struct ly_ctx * context,
                      const char *          module,
                      struct srplug_feat *  feature)
 	__srplug_export;
-
-
-extern sr_error_t
-srplug_acquire_context(sr_session_ctx_t *     session,
-                       const struct ly_ctx ** context)
-	__srplug_export;
-
-static inline void
-srplug_release_context(sr_session_ctx_t * session)
-{
-	srplug_assert(session);
-
-	srepo_release_context(session);
-}
 
 #endif /* _SRPLUG_COMMON_H */

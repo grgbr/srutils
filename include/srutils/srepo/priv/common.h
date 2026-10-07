@@ -2,6 +2,7 @@
 #define _SREPO_PRIV_COMMON_H
 
 #include <srutils/priv/config.h>
+#include <sysrepo.h>
 #include <stroll/cdefs.h>
 #include <stdlib.h>
 #include <string.h>
@@ -26,6 +27,10 @@
 #define srepo_assert(_cond)
 
 #endif /* defined(CONFIG_SREPO_ASSERT) */
+
+extern sr_error_t
+srepo_sys_error(int error)
+	__srepo_export;
 
 static inline __srepo_nonull(1) __warn_result
 ssize_t

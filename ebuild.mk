@@ -14,11 +14,13 @@ subdirs     += srplug
 srplug-deps := srepo
 
 HEADERDIR   := $(CURDIR)/include
-headers     := srutils/srepo/common.h
-headers     += srutils/srepo/data.h
+headers     := srutils/srepo/common.h srutils/srepo/priv/common.h
+headers     += $(call kconf_enabled,SREPO_LOG,srutils/srepo/log.h \
+                                              srutils/srepo/priv/log.h)
+headers     += srutils/srepo/xpath.h srutils/srepo/priv/xpath.h
+headers     += srutils/srepo/data.h srutils/srepo/priv/data.h
 headers     += srutils/srepo/schema.h
 headers     += srutils/srplug/common.h
-headers     += srutils/srplug/data.h
 headers     += $(call kconf_enabled,SRPLUG_DAEMON,srutils/srplug/daemon.h)
 headers     += $(call kconf_enabled,SRPLUG_THREAD,srutils/srplug/thread.h)
 
@@ -38,7 +40,9 @@ Name: libsrepo
 Description: srepo library
 Version: $(VERSION)
 Cflags: -I$${includedir}
-Requires: sysrepo libyang
+Requires.private: $(strip $(call kconf_enabled,SREPO_LOG,libelog) \
+                          $(call kconf_enabled,SREPO_ASSERT,libstroll))
+Requires: sysrepo libyang $(call kconf_enabled,SREPO_ASSERT,libstroll)
 $(libsrepo_pkgconf_libs)
 endef
 

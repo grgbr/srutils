@@ -12,6 +12,21 @@ config SREPO_ASSERT
 	  Build srepo with assertions enabled to perform full verification of
 	  arguments consistency as well as internal state.
 
+config SREPO_DEBUG
+	bool "Debug"
+	default n
+	help
+	  Build srepo in debug mode, enabling additional debugging messages,
+	  additional internal state consistency checks as well as full memory
+	  cleanup logic suitable for memory error detection tools such as
+	  Valgrind's Memcheck and co.
+
+config SREPO_LOG
+        bool "Logging"
+        default y
+        help
+          Build srepo with support for logging messages through elog.
+
 config SREPO_PRINT
         bool "Object printing"
         default n

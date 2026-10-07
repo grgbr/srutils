@@ -5,6 +5,40 @@
 #warning TODO: use srplg_log_errinfo() to push errors to clients.
 
 /******************************************************************************
+ * YANG data node properties handling.
+ ******************************************************************************/
+
+const char *
+srepo_dat_node_name(const struct lyd_node * node)
+{
+	srepo_assert(node);
+
+	const char * name = LYD_NAME(node);
+
+	return (srepo_xpath_validate_node(name) > 0) ? name : NULL;
+}
+
+char *
+srepo_dat_node_path(const struct lyd_node * node)
+{
+	srepo_assert(node);
+
+	char * path;
+	char * pth;
+
+	path = srepo_xpath_alloc();
+	pth = lyd_path(node, LYD_PATH_STD, path, SREPO_XPATH_SIZE);
+	if (pth) {
+		srepo_assert(srepo_xpath_validate(path) > 0);
+		return pth;
+	}
+
+	srepo_free(path);
+
+	return NULL;
+}
+
+/******************************************************************************
  * Yang data node value manipulation.
  ******************************************************************************/
 
@@ -245,6 +279,19 @@ srepo_dat_vfindf_node(const struct lyd_node * tree,
  * Loading YANG data nodes / trees.
  ******************************************************************************/
 
+#define srepo_dat_assert_get_flags(_flags) \
+	srepo_assert(!((_flags) & ~(SR_OPER_NO_STATE | \
+	                            SR_OPER_NO_CONFIG | \
+	                            SR_OPER_NO_SUBS | \
+	                            SR_OPER_NO_STORED | \
+	                            SR_OPER_WITH_ORIGIN | \
+	                            SR_OPER_NO_POLL_CACHED | \
+	                            SR_OPER_NO_RUN_CACHED | \
+	                            SR_OPER_NO_PUSH_NP_CONT | \
+	                            SR_OPER_NO_NEW_CHANGES))); \
+	srepo_assert(((_flags) & (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG)) != \
+	             (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG))
+
 sr_error_t
 srepo_dat_load_data(sr_session_ctx_t * session,
                     const char *       path,
@@ -254,7 +301,7 @@ srepo_dat_load_data(sr_session_ctx_t * session,
 {
 	srepo_assert(session);
 	srepo_assert(srepo_xpath_validate(path) > 0);
-	srepo_dat_assert_flags(flags);
+	srepo_dat_assert_get_flags(flags);
 	srepo_assert(data);
 
 	sr_error_t err;
@@ -306,7 +353,7 @@ srepo_dat_load_node(sr_session_ctx_t * session,
 }
 
 /******************************************************************************
- * Debugging / printing YANG data nodes / trees.
+ * Debugging / printing / logging YANG data nodes / trees.
  ******************************************************************************/
 
 #if defined(CONFIG_SREPO_PRINT)
@@ -361,3 +408,77 @@ srepo_dat_print_data(const sr_data_t * data,
 }
 
 #endif /* defined(CONFIG_SREPO_PRINT) */
+
+#if defined(CONFIG_SREPO_LOG)
+
+static void
+srepo_dat_log_xpath_fail(const char * __restrict prefix)
+{
+	srepo_assert(prefix);
+
+	elog_log(srepo_logger,
+	         ELOG_WARNING_SEVERITY,
+	         "%s%slogging failure: invalid node path.",
+	         prefix,
+	         prefix[0] ? ": " : "");
+
+}
+
+void
+srepo_dat_vlog_node(const struct lyd_node * __restrict node,
+                    enum elog_severity                 severity,
+                    const char * __restrict            prefix,
+                    const char * __restrict            format,
+                    va_list                            args)
+{
+	srepo_assert(srepo_logger);
+	srepo_assert(node);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	char * path;
+
+	path = srepo_dat_node_path(node);
+	if (path) {
+		srepo_xpath_vlog(path, severity, prefix, format, args);
+		srepo_free(path);
+		return;
+	}
+
+	srepo_dat_log_xpath_fail(prefix);
+}
+
+void
+srepo_dat_vlog_sess_node(const sr_session_ctx_t * __restrict session,
+                         const struct lyd_node * __restrict  node,
+                         enum elog_severity                  severity,
+                         const char * __restrict             prefix,
+                         const char * __restrict             format,
+                         va_list                             args)
+{
+	srepo_assert(srepo_logger);
+	srepo_assert(session);
+	srepo_assert(node);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	char * path;
+
+	path = srepo_dat_node_path(node);
+	if (path) {
+		srepo_xpath_vlog_sess(session,
+		                      path,
+		                      severity,
+		                      prefix,
+		                      format,
+		                      args);
+		srepo_free(path);
+		return;
+	}
+
+	srepo_dat_log_xpath_fail(prefix);
+}
+
+#endif /* defined(CONFIG_SREPO_LOG) */
