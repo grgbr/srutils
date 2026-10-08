@@ -191,6 +191,10 @@ extern sr_error_t
 srplug_probe_feature(const struct ly_ctx * context,
                      const char *          module,
                      struct srplug_feat *  feature)
-	__srplug_export;
+	__srplug_nonull(1, 2, 3) __srplug_export;
+
+const struct lys_module *
+srplug_find_module(const struct ly_ctx * context, const char * module)
+	__srplug_nonull(1, 2) __srplug_export;
 
 #endif /* _SRPLUG_COMMON_H */
