@@ -477,7 +477,8 @@ srplug_daemon_cmdln_assert_opt(const struct srplug_daemon_cmdln_opt * option)
 		srplug_assert(option->short_name !=
 		              srplug_daemon_cmdln_intern_opts[o].key);
 
-		if (option->long_name && srplug_daemon_cmdln_intern_opts[o].name)
+		if (option->long_name &&
+		    srplug_daemon_cmdln_intern_opts[o].name)
 			srplug_assert(strcmp(
 				option->long_name,
 				srplug_daemon_cmdln_intern_opts[o].name));
@@ -495,6 +496,8 @@ srplug_daemon_cmdln_cmp_optkeys(const void * first,
 	return snd->short_name - fst->short_name;
 }
 
+#if defined(CONFIG_SRPLUG_ASSERT)
+
 static void
 srplug_daemon_cmdln_assert_optkeys(const struct srplug_daemon_cmdln_opt * group,
                                    unsigned int                           nr)
@@ -511,6 +514,17 @@ srplug_daemon_cmdln_assert_optkeys(const struct srplug_daemon_cmdln_opt * group,
 		assert(group[o].short_name != group[o - 1].short_name);
 	}
 }
+
+#else  /* !defined(CONFIG_SRPLUG_ASSERT) */
+
+static void
+srplug_daemon_cmdln_assert_optkeys(
+	const struct srplug_daemon_cmdln_opt * group __unused,
+	unsigned int                           nr __unused)
+{
+}
+
+#endif /* defined(CONFIG_SRPLUG_ASSERT) */
 
 static void
 srplug_daemon_cmdln_assert_optnames(struct srplug_daemon_cmdln_opt * group,
@@ -1097,7 +1111,7 @@ srplug_process_subs(sr_subscription_ctx_t * subscriptions,
 
 static void
 srplug_clear_subs(sr_subscription_ctx_t *  subscriptions,
-                  const sr_session_ctx_t * session)
+                  const sr_session_ctx_t * session __unused)
 {
 	int err;
 
@@ -1322,7 +1336,7 @@ srplug_daemon_disable_subs(struct srplug_daemon * daemon)
 		srplug_assert(daemon->sub_ctx);
 
 		int fd;
-		int err;
+		int err __unused;
 
 		etux_timer_cancel(&daemon->sub_tmr);
 

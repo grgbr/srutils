@@ -562,27 +562,6 @@ srepo_dat_log_sess_node(const sr_session_ctx_t * __restrict session,
 
 #else  /* !defined(CONFIG_SREPO_LOG) */
 
-static inline __srepo_nonull(1, 3, 4) __printf(4, 5)
-void
-srepo_dat_vlog_node(const struct lyd_node * __restrict node __unused,
-                    enum elog_severity                 severity __unused,
-                    const char * __restrict            prefix __unused,
-                    const char * __restrict            format __unused,
-                    va_list                            args __unused)
-{
-}
-
-static inline __srepo_nonull(1, 2, 4, 5) __printf(5, 0)
-void
-srepo_dat_vlog_sess_node(const sr_session_ctx_t * __restrict session __unused,
-                         const struct lyd_node * __restrict  node __unused,
-                         enum elog_severity                  severity __unused,
-                         const char * __restrict             prefix __unused,
-                         const char * __restrict             format __unused,
-                         va_list                             args __unused)
-{
-}
-
 #define srepo_dat_node_err(_sess, _node, _fmt, ...)
 #define srepo_dat_node_warn(_sess, _node, _fmt, ...)
 #define srepo_dat_node_notice(_sess, _node, _fmt, ...)
