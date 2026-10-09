@@ -4,6 +4,26 @@
 #include <srutils/srepo/priv/common.h>
 #include <stdarg.h>
 
+/**
+ * Return codes used to traverse Yang trees.
+ */
+enum srepo_walk_ret {
+	SREPO_SKIP_WALK_RET = -1,
+	SREPO_CONT_WALK_RET = SR_ERR_OK
+};
+
+/**
+ * Yang tree traversal events.
+ */
+enum srepo_walk_event {
+	/** About to enter a node while travelling down a Yang tree. */
+	SREPO_PRE_WALK_EVT,
+	/** About to leave a node while travelling back up a Yang tree. */
+	SREPO_POST_WALK_EVT,
+	/** End of Yang tree traversal events marker. */
+	SREPO_WALK_EVT_NR
+};
+
 static inline __srepo_nonull(1, 2) __printf(2, 0) __warn_result
 int
 srepo_vasprintf(char ** __restrict      string,
