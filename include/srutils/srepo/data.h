@@ -24,7 +24,7 @@ srepo_dat_node_type(const struct lyd_node * node)
 
 extern char *
 srepo_dat_node_path(const struct lyd_node * node)
-	__srepo_nonull(1) __warn_result __srepo_export;
+	__srepo_nonull(1) __returns_nonull __srepo_export;
 
 /******************************************************************************
  * YANG data node value manipulation.
@@ -322,8 +322,24 @@ srepo_dat_replace_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
 }
 
 /******************************************************************************
- * Searching YANG data nodes / trees.
+ * Searching / browsing YANG data nodes / trees.
  ******************************************************************************/
+
+/* Iterate over a list of YANG data trees. */
+#define srepo_dat_foreach_tree(_tree, _node) \
+	LY_LIST_FOR(_tree, _node)
+
+/* Iterate over a list of YANG data trees. */
+#define srepo_dat_foreach_data_tree(_data, _node) \
+	srepo_dat_foreach_tree((_data)->tree, _node)
+
+/* Iterate over each data node child. */
+#define srepo_dat_foreach_child(_node, _child) \
+	LY_LIST_FOR(lyd_child(_node), _child)
+
+/* Iterate over each data tree child node. */
+#define srepo_dat_foreach_data_child(_data, _child) \
+	srepo_dat_foreach_child((_data)->tree, _child)
 
 extern sr_error_t
 srepo_dat_find_node(const struct lyd_node * tree,
@@ -363,22 +379,6 @@ srepo_dat_findf_node(const struct lyd_node * tree,
 /******************************************************************************
  * Loading YANG data nodes / trees.
  ******************************************************************************/
-
-/* Iterate over a list of YANG trees. */
-#define srepo_dat_foreach_tree(_tree, _node) \
-	LY_LIST_FOR(_tree, _node)
-
-/* Iterate over a list of YANG data trees. */
-#define srepo_dat_foreach_data_tree(_data, _node) \
-	srepo_dat_foreach_tree((_data)->tree, _node)
-
-/* Iterate over each node child. */
-#define srepo_dat_foreach_child(_node, _child) \
-	LY_LIST_FOR(lyd_child(_node), _child)
-
-/* Iterate over each data tree child node. */
-#define srepo_dat_foreach_data_child(_data, _child) \
-	srepo_dat_foreach_child((_data)->tree, _child)
 
 extern sr_error_t
 srepo_dat_load_data(sr_session_ctx_t * session,
