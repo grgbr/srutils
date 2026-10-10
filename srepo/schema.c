@@ -1,5 +1,6 @@
 #include "common.h"
 #include "srutils/srepo/schema.h"
+#include "srutils/srepo/data.h"
 
 /******************************************************************************
  * Libyang (compiled) schema node handling.
@@ -121,6 +122,70 @@ srepo_sch_print_node_diag(struct ly_out *          printer,
 }
 
 #endif /* defined(CONFIG_SREPO_PRINT) */
+
+/******************************************************************************
+ * Loading Yang data from (compiled) schema nodes.
+ ******************************************************************************/
+
+sr_error_t
+srepo_sch_load_data(sr_session_ctx_t *       session,
+                    const struct lysc_node * node,
+                    unsigned int             depth,
+                    sr_get_oper_flag_t       flags,
+                    sr_data_t **             data)
+{
+	srepo_assert(session);
+	srepo_assert(node);
+	srepo_dat_assert_get_flags(flags);
+	srepo_assert(data);
+
+	char *     path;
+	sr_error_t ret;
+
+	path = srepo_sch_node_path(node);
+	ret = srepo_dat_load_data(session, path, depth, flags, data);
+	srepo_free(path);
+
+	return ret;
+}
+
+sr_error_t
+srepo_sch_load_node(sr_session_ctx_t *       session,
+                    const struct lysc_node * node,
+                    sr_data_t **             data)
+{
+	srepo_assert(session);
+	srepo_assert(node);
+	srepo_assert(data);
+
+	char *     path;
+	sr_error_t ret;
+
+	path = srepo_sch_node_path(node);
+	ret = srepo_dat_load_node(session, path, data);
+	srepo_free(path);
+
+	return ret;
+}
+
+sr_error_t
+srepo_sch_load_subtree(sr_session_ctx_t *       session,
+                       const struct lysc_node * node,
+                       sr_data_t **             data)
+{
+	srepo_assert(session);
+	srepo_assert(node);
+	srepo_assert(data);
+
+	char *     path;
+	sr_error_t ret;
+
+	path = srepo_sch_node_path(node);
+	ret = srepo_dat_load_subtree(session, path, data);
+	srepo_free(path);
+
+	return ret;
+}
 
 /******************************************************************************
  * Libyang (compiled) schema extension handling.
@@ -282,7 +347,7 @@ srepo_sch_walk_module(const struct lys_module * module,
 	srepo_assert(visit);
 
 	const struct lysc_node * root;
-	int                      ret = SR_ERR_OK;
+	sr_error_t               ret = SR_ERR_OK;
 
 	/*
 	 * Iterate over schema nodes only, i.e., not actions / rpcs, neither
