@@ -8,7 +8,7 @@
 include ../common.mk
 
 common-cflags  := $(srutils-common-cflags)
-common-ldflags := $(srutils-common-ldflags) -L../srepo
+common-ldflags := $(srutils-common-ldflags) -L$(BUILDDIR)/../srepo
 
 ifneq ($(filter y,$(CONFIG_SRPLUG_ASSERT)),)
 common-cflags       := $(filter-out -DNDEBUG,$(common-cflags))
