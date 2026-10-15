@@ -1221,29 +1221,33 @@ srplug_register_change_sub(sr_subscription_ctx_t **         subscriptions,
 	srplug_assert_change_sub(subscription);
 	srplug_assert(poller);
 
-	int err;
+	if (!subscription->feature || subscription->feature->on) {
+		int err;
 
-	err = sr_module_change_subscribe(
-		session,
-		subscription->module,
-		subscription->xpath,
-		subscription->on_change,
-		data,
-		subscription->priority,
-		subscription->options | SR_SUBSCR_NO_THREAD,
-		subscriptions);
-	if (err == SR_ERR_OK)
+		err = sr_module_change_subscribe(
+			session,
+			subscription->module,
+			subscription->xpath,
+			subscription->on_change,
+			data,
+			subscription->priority,
+			subscription->options | SR_SUBSCR_NO_THREAD,
+			subscriptions);
+		if (err == SR_ERR_OK)
+			return 0;
+
+		if (err == SR_ERR_NO_MEMORY)
+			srplug_abort();
+
+		srplug_daemon_info(
+			"'%s': cannot register configuration data handler: %s",
+			subscription->xpath ? subscription->xpath : "",
+			sr_strerror(err));
+
+		return -EPERM;
+	}
+	else
 		return 0;
-
-	if (err == SR_ERR_NO_MEMORY)
-		srplug_abort();
-
-	srplug_daemon_info("'%s': "
-	                   "cannot register configuration data handler: %s",
-	                   subscription->xpath ? subscription->xpath : "",
-	                   sr_strerror(err));
-
-	return -EPERM;
 }
 
 #define srplug_assert_oper_sub(_sub) \
@@ -1266,27 +1270,32 @@ srplug_register_oper_sub(sr_subscription_ctx_t **       subscriptions,
 	srplug_assert_oper_sub(subscription);
 	srplug_assert(poller);
 
-	int err;
+	if (!subscription->feature || subscription->feature->on) {
+		int err;
 
-	err = sr_oper_get_subscribe(
-		session,
-		subscription->module,
-		subscription->xpath,
-		subscription->on_get,
-		data,
-		subscription->options | SR_SUBSCR_NO_THREAD,
-		subscriptions);
-	if (err == SR_ERR_OK)
+		err = sr_oper_get_subscribe(
+			session,
+			subscription->module,
+			subscription->xpath,
+			subscription->on_get,
+			data,
+			subscription->options | SR_SUBSCR_NO_THREAD,
+			subscriptions);
+		if (err == SR_ERR_OK)
+			return 0;
+
+		if (err == SR_ERR_NO_MEMORY)
+			srplug_abort();
+
+		srplug_daemon_info(
+			"'%s': cannot register operational data handler: %s",
+			subscription->xpath ? subscription->xpath : "",
+			sr_strerror(err));
+
+		return -EPERM;
+	}
+	else
 		return 0;
-
-	if (err == SR_ERR_NO_MEMORY)
-		srplug_abort();
-
-	srplug_daemon_info("'%s': cannot register operational data handler: %s",
-	                   subscription->xpath ? subscription->xpath : "",
-	                   sr_strerror(err));
-
-	return -EPERM;
 }
 
 #define srplug_assert_rpc_sub(_sub) \
@@ -1309,27 +1318,32 @@ srplug_register_rpc_sub(sr_subscription_ctx_t **      subscriptions,
 	srplug_assert_rpc_sub(subscription);
 	srplug_assert(poller);
 
-	int err;
+	if (!subscription->feature || subscription->feature->on) {
+		int err;
 
-	err = sr_rpc_subscribe(
-		session,
-		subscription->xpath,
-		subscription->on_rpc,
-		data,
-		subscription->priority,
-		subscription->options | SR_SUBSCR_NO_THREAD,
-		subscriptions);
-	if (err == SR_ERR_OK)
+		err = sr_rpc_subscribe(
+			session,
+			subscription->xpath,
+			subscription->on_rpc,
+			data,
+			subscription->priority,
+			subscription->options | SR_SUBSCR_NO_THREAD,
+			subscriptions);
+		if (err == SR_ERR_OK)
+			return 0;
+
+		if (err == SR_ERR_NO_MEMORY)
+			srplug_abort();
+
+		srplug_daemon_info("'%s': "
+		                   "cannot register RPC / action handler: %s",
+		                   subscription->xpath,
+		                   sr_strerror(err));
+
+		return -EPERM;
+	}
+	else
 		return 0;
-
-	if (err == SR_ERR_NO_MEMORY)
-		srplug_abort();
-
-	srplug_daemon_info("'%s': cannot register RPC / action handler: %s",
-	                   subscription->xpath,
-	                   sr_strerror(err));
-
-	return -EPERM;
 }
 
 /******************************************************************************
