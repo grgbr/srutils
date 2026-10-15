@@ -35,7 +35,7 @@ srepo_dat_node_schema(const struct lyd_node * node)
 
 extern char *
 srepo_dat_node_path(const struct lyd_node * node)
-	__srepo_nonull(1) __returns_nonull __srepo_export;
+	__srepo_nonull(1) __returns_nonull __warn_result __srepo_export;
 
 /******************************************************************************
  * YANG data node value manipulation.
@@ -461,6 +461,14 @@ srepo_dat_print_data(const sr_data_t * data,
 
 #if defined(CONFIG_SREPO_LOG)
 
+extern void
+srepo_dat_vlog_node(const struct lyd_node * __restrict  node,
+                    enum elog_severity                  severity,
+                    const char * __restrict             prefix,
+                    const char * __restrict             format,
+                    va_list                             args)
+	__srepo_nonull(1, 3, 4) __printf(4, 0) __srepo_export;
+
 static inline __srepo_nonull(1, 3, 4) __printf(4, 5)
 void
 srepo_dat_log_node(const struct lyd_node * __restrict node,
@@ -483,44 +491,15 @@ srepo_dat_log_node(const struct lyd_node * __restrict node,
 	}
 }
 
-#define srepo_dat_node_err(_node, _fmt, ...) \
-	srepo_dat_log_node(_node, \
-	                   ELOG_ERR_SEVERITY, \
-	                   "srepo", \
-	                   _fmt, \
-	                   ## __VA_ARGS__)
+extern void
+srepo_dat_vlog_sess_node(const sr_session_ctx_t * __restrict session,
+                         const struct lyd_node * __restrict  node,
+                         enum elog_severity                  severity,
+                         const char * __restrict             prefix,
+                         const char * __restrict             format,
+                         va_list                             args)
+	__srepo_nonull(1, 2, 4, 5) __printf(5, 0) __srepo_export;
 
-#define srepo_dat_node_warn(_node, _fmt, ...) \
-	srepo_dat_log_node(_node, \
-	                   ELOG_WARNING_SEVERITY, \
-	                   "srepo", \
-	                   _fmt, \
-	                   ## __VA_ARGS__)
-
-#define srepo_dat_node_notice(_node, _fmt, ...) \
-	srepo_dat_log_node(_node, \
-	                   ELOG_NOTICE_SEVERITY, \
-	                   "srepo", \
-	                   _fmt, \
-	                   ## __VA_ARGS__)
-
-#define srepo_dat_node_info(_node, _fmt, ...) \
-	srepo_dat_log_node(_node, \
-	                   ELOG_INFO_SEVERITY, \
-	                   "srepo", \
-	                   _fmt, \
-	                   ## __VA_ARGS__)
-
-#if defined(CONFIG_SREPO_DEBUG)
-
-#define srepo_dat_node_debug(_node, _fmt, ...) \
-	srepo_dat_log_node(_node, \
-	                   ELOG_DEBUG_SEVERITY, \
-	                   "srepo", \
-	                   _fmt, \
-	                   ## __VA_ARGS__)
-
-#endif /* defined(CONFIG_SREPO_DEBUG) */
 
 static inline __srepo_nonull(1, 2, 4, 5) __printf(5, 6)
 void
@@ -550,60 +529,6 @@ srepo_dat_log_sess_node(const sr_session_ctx_t * __restrict session,
 		va_end(args);
 	}
 }
-
-#define srepo_dat_sess_node_err(_sess, _node, _fmt, ...) \
-	srepo_dat_log_sess_node(_sess, \
-	                        _node, \
-	                        ELOG_ERR_SEVERITY, \
-	                        "srepo", \
-	                        _fmt, \
-	                        ## __VA_ARGS__)
-
-#define srepo_dat_sess_node_warn(_sess, _node, _fmt, ...) \
-	srepo_dat_log_sess_node(_sess, \
-	                        _node, \
-	                        ELOG_WARNING_SEVERITY, \
-	                        "srepo", \
-	                        _fmt, \
-	                        ## __VA_ARGS__)
-
-#define srepo_dat_sess_node_notice(_sess, _node, _fmt, ...) \
-	srepo_dat_log_sess_node(_sess, \
-	                        _node, \
-	                        ELOG_NOTICE_SEVERITY, \
-	                        "srepo", \
-	                        _fmt, \
-	                        ## __VA_ARGS__)
-
-#define srepo_dat_sess_node_info(_sess, _node, _fmt, ...) \
-	srepo_dat_log_sess_node(_sess, \
-	                        _node, \
-	                        ELOG_INFO_SEVERITY, \
-	                        "srepo", \
-	                        _fmt, \
-	                        ## __VA_ARGS__)
-
-#if defined(CONFIG_SREPO_DEBUG)
-
-#define srepo_dat_sess_node_debug(_sess, _node, _fmt, ...) \
-	srepo_dat_log_sess_node(_sess, \
-	                        _node, \
-	                        ELOG_DEBUG_SEVERITY, \
-	                        "srepo", \
-	                        _fmt, \
-	                        ## __VA_ARGS__)
-
-#endif /* defined(CONFIG_SREPO_DEBUG) */
-
-#else  /* !defined(CONFIG_SREPO_LOG) */
-
-#define srepo_dat_node_err(_sess, _node, _fmt, ...)
-#define srepo_dat_node_warn(_sess, _node, _fmt, ...)
-#define srepo_dat_node_notice(_sess, _node, _fmt, ...)
-#define srepo_dat_node_info(_sess, _node, _fmt, ...)
-#if defined(CONFIG_SREPO_DEBUG)
-#define srepo_dat_node_debug(_sess, _node, _fmt, ...)
-#endif /* defined(CONFIG_SREPO_DEBUG) */
 
 #endif /* defined(CONFIG_SREPO_LOG) */
 

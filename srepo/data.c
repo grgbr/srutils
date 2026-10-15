@@ -24,13 +24,12 @@ srepo_dat_node_path(const struct lyd_node * node)
 	srepo_assert(node);
 
 	char * path;
-	char * pth;
 
 	path = srepo_xpath_alloc();
-	pth = lyd_path(node, LYD_PATH_STD, path, SREPO_XPATH_SIZE);
-	if (pth) {
+	path = lyd_path(node, LYD_PATH_STD, path, SREPO_XPATH_SIZE);
+	if (path) {
 		srepo_assert(srepo_xpath_validate(path) > 0);
-		return pth;
+		return path;
 	}
 
 	/* No more memory or SREPO_XPATH_SIZE not large enought ! */

@@ -12,13 +12,12 @@ srepo_sch_node_path(const struct lysc_node * node)
 	srepo_assert(node);
 
 	char * path;
-	char * pth;
 
 	path = srepo_xpath_alloc();
-	pth = lysc_path(node, LYSC_PATH_DATA, NULL, 0);
-	if (pth) {
+	path = lysc_path(node, LYSC_PATH_DATA, path, SREPO_XPATH_SIZE);
+	if (path) {
 		srepo_assert(srepo_xpath_validate(path) > 0);
-		return pth;
+		return path;
 	}
 
 	/* No more memory or SREPO_XPATH_SIZE not large enought ! */
@@ -378,3 +377,53 @@ srepo_sch_find_module(const struct ly_ctx * context, const char * module)
 
 	return NULL;
 }
+
+/******************************************************************************
+ * Logging YANG schema nodes.
+ ******************************************************************************/
+
+#if defined(CONFIG_SREPO_LOG)
+
+void
+srepo_sch_vlog_node(const struct lysc_node * __restrict node,
+                    enum elog_severity                  severity,
+                    const char * __restrict             prefix,
+                    const char * __restrict             format,
+                    va_list                             args)
+{
+	srepo_assert(srepo_logger);
+	srepo_assert(node);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	char * path;
+
+	path = srepo_sch_node_path(node);
+	srepo_xpath_vlog(path, severity, prefix, format, args);
+	srepo_free(path);
+}
+
+void
+srepo_sch_vlog_sess_node(const sr_session_ctx_t * __restrict session,
+                         const struct lysc_node * __restrict node,
+                         enum elog_severity                  severity,
+                         const char * __restrict             prefix,
+                         const char * __restrict             format,
+                         va_list                             args)
+{
+	srepo_assert(srepo_logger);
+	srepo_assert(session);
+	srepo_assert(node);
+	srepo_assert(prefix);
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	char * path;
+
+	path = srepo_sch_node_path(node);
+	srepo_xpath_vlog_sess(session, path, severity, prefix, format, args);
+	srepo_free(path);
+}
+
+#endif /* defined(CONFIG_SREPO_LOG) */
