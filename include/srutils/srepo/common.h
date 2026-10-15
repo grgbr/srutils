@@ -4,6 +4,7 @@
 #include <srutils/srepo/priv/common.h>
 #include <sysrepo.h>
 #include <stdlib.h>
+#include <stdarg.h>
 
 static inline __srepo_nonull(1, 2) __printf(2, 0) __warn_result
 int
@@ -19,15 +20,28 @@ srepo_vasprintf(char ** __restrict      string,
 	ret = vasprintf(string, format, args);
 	if (ret < 0) {
 		if (errno == ENOMEM)
-			abort();
+			srepo_abort();
 	}
 
 	return ret;
 }
 
-extern int
-srepo_asprintf(char ** __restrict string, const char * __restrict format, ...)
-	__srepo_nonull(1, 2) __printf(2, 3) __warn_result __srepo_export;
+static inline __srepo_nonull(1, 2) __printf(2, 3) __warn_result
+int
+srepo_asprintf(char ** string, const char * format, ...)
+{
+	srepo_assert(string);
+	srepo_assert(format);
+
+	va_list args;
+	int     ret;
+
+	va_start(args, format);
+	ret = srepo_vasprintf(string, format, args);
+	va_end(args);
+
+	return ret;
+}
 
 extern sr_error_t
 srepo_acquire_context(sr_session_ctx_t *     session,
@@ -81,5 +95,22 @@ srepo_replace_config(sr_session_ctx_t * session,
                      const char *       module,
                      struct lyd_node *  tree)
 	__srepo_nonull(1, 2, 3) __warn_result;
+	
+#if defined(CONFIG_SREPO_PRINT)
+
+extern sr_error_t
+srepo_open_stdio_print(struct ly_out ** printer, FILE * stdio)
+	__srepo_nonull(1, 2) __warn_result;
+
+static inline __srepo_nonull(1)
+void
+srepo_close_stdio_print(struct ly_out * printer)
+{
+	srepo_assert(printer);
+
+	ly_out_free(printer, NULL, 0);
+}
+
+#endif /* defined(CONFIG_SREPO_PRINT) */
 
 #endif /* _SREPO_COMMON_H */
