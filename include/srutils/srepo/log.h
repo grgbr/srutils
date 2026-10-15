@@ -1,9 +1,9 @@
 #ifndef _SREPO_LOG_H
 #define _SREPO_LOG_H
 
-#if defined(CONFIG_SREPO_LOG)
-
 #include <srutils/srepo/priv/log.h>
+
+#if defined(CONFIG_SREPO_LOG)
 
 static inline __srepo_nonull(1, 3, 4) __printf(4, 5)
 void
@@ -154,7 +154,7 @@ srepo_log_setup(struct elog * logger)
 
 static inline
 void
-srepo_log_setup(struct elog * logger)
+srepo_log_setup(struct elog * logger __unused)
 {
 }
 

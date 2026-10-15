@@ -1,25 +1,22 @@
 #ifndef _SREPO_DATA_H
 #define _SREPO_DATA_H
 
-#include <srutils/srepo/common.h>
+#include <srutils/srepo/xpath.h>
 #include <stdbool.h>
 #include <stdarg.h>
 
 /******************************************************************************
- * YANG xpath manipulation.
+ * YANG data node value manipulation.
  ******************************************************************************/
 
-static inline char *
-srepo_dat_path(const struct lyd_node * node)
+static inline __srepo_nonull(1) __returns_nonull
+const char *
+srepo_dat_node_name(const struct lyd_node * node)
 {
 	srepo_assert(node);
 
-	return lyd_path(node, LYD_PATH_STD, NULL, 0);
+	return LYD_NAME(node);
 }
-
-/******************************************************************************
- * YANG data node value manipulation.
- ******************************************************************************/
 
 static inline uint16_t
 srepo_dat_node_type(const struct lyd_node * node)
@@ -30,7 +27,25 @@ srepo_dat_node_type(const struct lyd_node * node)
 	return node->schema->nodetype;
 }
 
-static inline const struct lyd_value *
+static inline __srepo_nonull(1) __returns_nonull
+char *
+srepo_dat_node_path(const struct lyd_node * node)
+{
+	srepo_assert(node);
+
+	char *       path;
+	const char * pth;
+
+	path = srepo_xpath_alloc();
+
+	pth = lyd_path(node, LYD_PATH_STD, path, SREPO_XPATH_SIZE);
+	srepo_assert(pth);
+
+	return path;
+}
+
+static inline __srepo_nonull(1) __returns_nonull
+const struct lyd_value *
 srepo_dat_node_value(const struct lyd_node * node)
 {
 	srepo_assert(node);
@@ -99,27 +114,88 @@ srepo_dat_node_dflt_as_str(const struct lyd_node * node)
  * YANG data node manipulation.
  ******************************************************************************/
 
-static inline const char *
-srepo_dat_node_name(const struct lyd_node * node)
-{
-	srepo_assert(node);
+extern sr_error_t
+srepo_dat_change_bypath(sr_session_ctx_t * session,
+                        const char *       path,
+                        const char *       value,
+                        const char *       origin,
+                        uint32_t           flags)
+	__srepo_nonull(1, 2, 3) __srepo_export;
 
-	return LYD_NAME(node);
+extern sr_error_t
+srepo_dat_vchangef_bypath(sr_session_ctx_t * session,
+                          const char *       path,
+                          const char *       origin,
+                          uint32_t           flags,
+                          const char *       format,
+                          va_list            args)
+	__srepo_nonull(1, 2, 5) __printf(5, 0) __srepo_export;
+
+static inline __srepo_nonull(1, 2, 5) __printf(5, 6)
+sr_error_t
+srepo_dat_changef_bypath(sr_session_ctx_t * session,
+                         const char *       path,
+                         const char *       origin,
+                         uint32_t           flags,
+                         const char *       format,
+                         ...)
+{
+	srepo_assert(session);
+	srepo_assert(srepo_xpath_validate(path) > 0);
+	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
+	                         SR_EDIT_NON_RECURSIVE |
+	                         SR_EDIT_STRICT |
+	                         SR_EDIT_ISOLATE)));
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	va_list    args;
+	sr_error_t ret;
+
+	va_start(args, format);
+	ret = srepo_dat_vchangef_bypath(
+		session, path, origin, flags, format, args);
+	va_end(args);
+
+	return ret;
 }
 
 extern sr_error_t
+srepo_dat_new_node(const struct ly_ctx * context,
+                   struct lyd_node *     parent,
+                   const char *          path,
+                   const char *          value,
+                   uint32_t              options,
+                   struct lyd_node **    nevv)
+	__srepo_nonull(3) __srepo_export;
+
+static inline __srepo_nonull(3)
+sr_error_t
 srepo_dat_create_container(const struct ly_ctx * context,
                            struct lyd_node *     parent,
                            const char *          path,
                            struct lyd_node **    container)
-	__srepo_export;
+{
+	srepo_assert(context || parent);
+	srepo_assert(srepo_xpath_validate(path) > 0);
+	srepo_assert(parent || (path[0] == '/'));
 
-extern sr_error_t
+	return srepo_dat_new_node(context, parent, path, NULL, 0, container);
+}
+
+static inline __srepo_nonull(3)
+sr_error_t
 srepo_dat_create_list_ent(const struct ly_ctx * context,
                           struct lyd_node *     parent,
                           const char *          path,
                           struct lyd_node **    entry)
-	__srepo_export;
+{
+	srepo_assert(context || parent);
+	srepo_assert(srepo_xpath_validate(path) > 0);
+	srepo_assert(parent || (path[0] == '/'));
+
+	return srepo_dat_new_node(context, parent, path, NULL, 0, entry);
+}
 
 extern sr_error_t
 srepo_dat_create_list_keyent(const struct ly_ctx * context,
@@ -128,7 +204,7 @@ srepo_dat_create_list_keyent(const struct ly_ctx * context,
                              const char *          key,
                              const char *          value,
                              struct lyd_node **    entry)
-	__srepo_export;
+	__srepo_nonull(3, 4, 5) __srepo_export;
 
 extern sr_error_t
 srepo_dat_create_leaf(struct lyd_node *  parent,

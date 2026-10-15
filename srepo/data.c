@@ -1,4 +1,5 @@
 #include "srutils/srepo/data.h"
+#include "srutils/srepo/log.h"
 #include <errno.h>
 
 #warning TODO: use srplg_log_errinfo() to push errors to clients.
@@ -36,6 +37,41 @@ srepo_ly_error(LY_ERR error)
 	}
 }
 
+static sr_error_t
+srepo_sys_error(int error)
+{
+	switch (error) {
+	case 0:
+		return SR_ERR_OK;
+	case -ENODEV:
+	case -ENOENT:
+		return SR_ERR_NOT_FOUND;
+	case -EINVAL:
+	case -ENODATA:
+	case -ENAMETOOLONG:
+		return SR_ERR_INVAL_ARG;
+	case -ENOTSUP:
+		return SR_ERR_UNSUPPORTED;
+	case -EPERM:
+		return SR_ERR_OPERATION_FAILED;
+	case -EACCES:
+		return SR_ERR_UNAUTHORIZED;
+	case -ETIME:
+	case -ETIMEDOUT:
+		return SR_ERR_TIME_OUT;
+	case -ENOLCK:
+	case -EDEADLOCK:
+		return SR_ERR_LOCKED;
+	case -EAGAIN:
+		return SR_ERR_CALLBACK_SHELVE;
+	case -ENOMEM:
+		return SR_ERR_NO_MEMORY;
+	case -EIO:
+	default:
+		return SR_ERR_SYS;
+	}
+}
+
 /******************************************************************************
  * Yang data node value manipulation.
  ******************************************************************************/
@@ -60,8 +96,85 @@ srepo_dat_node_dflt_as_bool(const struct lyd_node * node, bool * value)
  * Yang data node manipulation.
  ******************************************************************************/
 
-static inline LY_ERR
-srepo_dat_new_path(const struct ly_ctx * context,
+sr_error_t
+srepo_dat_change_bypath(sr_session_ctx_t * session,
+                        const char *       path,
+                        const char *       value,
+                        const char *       origin,
+                        uint32_t           flags)
+{
+	srepo_assert(session);
+	srepo_assert(srepo_xpath_validate(path) > 0);
+	srepo_assert(value);
+	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
+	                         SR_EDIT_NON_RECURSIVE |
+	                         SR_EDIT_STRICT |
+	                         SR_EDIT_ISOLATE)));
+
+	sr_error_t ret;
+
+	ret = sr_set_item_str(session, path, value, origin, flags);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+
+	srepo_assert(ret != SR_ERR_INVAL_ARG);
+	if (ret == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	srepo_sess_info(session,
+	                "'%s': cannot change data node: %s",
+	                path,
+	                sr_strerror(ret));
+
+	return ret;
+}
+
+sr_error_t
+srepo_dat_vchangef_bypath(sr_session_ctx_t * session,
+                          const char *       path,
+                          const char *       origin,
+                          uint32_t           flags,
+                          const char *       format,
+                          va_list            args)
+{
+	srepo_assert(session);
+	srepo_assert(srepo_xpath_validate(path) > 0);
+	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
+	                         SR_EDIT_NON_RECURSIVE |
+	                         SR_EDIT_STRICT |
+	                         SR_EDIT_ISOLATE)));
+	srepo_assert(format);
+	srepo_assert(format[0]);
+
+	char * val;
+	int    ret;
+
+	ret = srepo_vasprintf(&val, format, args);
+	if (ret < 0) {
+		ret = srepo_sys_error(ret);
+		goto err;
+	}
+
+	ret = sr_set_item_str(session, path, val, origin, flags);
+	srepo_free(val);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+
+	srepo_assert(ret != SR_ERR_INVAL_ARG);
+	if (ret == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+err:
+	srepo_sess_info(session,
+	                "'%s': cannot change data node: %s",
+	                path,
+	                sr_strerror(ret));
+
+	return ret;
+}
+
+sr_error_t
+srepo_dat_new_node(const struct ly_ctx * context,
                    struct lyd_node *     parent,
                    const char *          path,
                    const char *          value,
@@ -69,54 +182,24 @@ srepo_dat_new_path(const struct ly_ctx * context,
                    struct lyd_node **    nevv)
 {
 	srepo_assert(context || parent);
-	srepo_assert(path);
-	srepo_assert(path[0]);
+	srepo_assert(srepo_xpath_validate(path) > 0);
 
 	LY_ERR ret;
 
 	ret = lyd_new_path(parent, context, path, value, options, nevv);
+	if (ret == LY_SUCCESS)
+		return SR_ERR_OK;
+
 	srepo_assert(ret != LY_EINVAL);
 	srepo_assert(ret != LY_EVALID);
+	srepo_assert(ret != LY_EEXIST);
 	if (ret == LY_EMEM)
 		srepo_abort();
 
-	return ret;
-}
-
-sr_error_t
-srepo_dat_create_container(const struct ly_ctx * context,
-                           struct lyd_node *     parent,
-                           const char *          path,
-                           struct lyd_node **    container)
-{
-	srepo_assert(context || parent);
-	srepo_assert(path);
-	srepo_assert(path[0]);
-	srepo_assert(parent || (path[0] == '/'));
-
-	LY_ERR ret;
-
-	ret = srepo_dat_new_path(context, parent, path, NULL, 0, container);
-	srepo_assert(ret != LY_EEXIST);
-
-	return srepo_ly_error(ret);
-}
-
-sr_error_t
-srepo_dat_create_list_ent(const struct ly_ctx * context,
-                          struct lyd_node *     parent,
-                          const char *          path,
-                          struct lyd_node **    entry)
-{
-	srepo_assert(context || parent);
-	srepo_assert(path);
-	srepo_assert(path[0]);
-	srepo_assert(parent || (path[0] == '/'));
-
-	LY_ERR ret;
-
-	ret = srepo_dat_new_path(context, parent, path, NULL, 0, entry);
-	srepo_assert(ret != LY_EEXIST);
+	srepo_pnode_info(parent,
+	                 path,
+	                 "cannot create data node: %s",
+	                 ly_strerr(ret));
 
 	return srepo_ly_error(ret);
 }
@@ -130,31 +213,31 @@ srepo_dat_create_list_keyent(const struct ly_ctx * context,
                              struct lyd_node **    entry)
 {
 	srepo_assert(context || parent);
-	srepo_assert(path);
-	srepo_assert(path[0]);
+	srepo_assert(srepo_xpath_validate(path) > 0);
 	srepo_assert(parent || (path[0] == '/'));
 	srepo_assert(key);
 	srepo_assert(key[0]);
 	srepo_assert(value);
 	srepo_assert(value[0]);
 
-	int    ret;
 	char * kpath;
+	int    ret;
 
-	ret = asprintf(&kpath, "%s[%s='%s']", path, key, value);
+	ret = srepo_asprintf(&kpath, "%s[%s='%s']", path, key, value);
 	srepo_assert(ret);
 	if (ret < 0) {
-		if (errno == ENOMEM)
-			return SR_ERR_NO_MEMORY;
-		return SR_ERR_LY;
+		if (ret == -ENOMEM)
+			srepo_abort();
+
+		FINISH ME!!! print a message
+		return srepo_sys_error(ret);
 	}
 
-	ret = srepo_dat_new_path(context, parent, kpath, value, 0, entry);
-	srepo_assert(ret != LY_EEXIST);
+	ret = srepo_dat_new_node(context, parent, kpath, value, 0, entry);
 
-	free(kpath);
+	srepo_free(kpath);
 
-	return srepo_ly_error(ret);
+	return ret;
 }
 
 sr_error_t

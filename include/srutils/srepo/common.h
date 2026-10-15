@@ -3,23 +3,7 @@
 
 #include <srutils/srepo/priv/common.h>
 #include <sysrepo.h>
-#include <stroll/cdefs.h>
 #include <stdlib.h>
-
-#define __srepo_export __export_public
-
-#if defined(CONFIG_SREPO_ASSERT)
-
-#include <stroll/assert.h>
-
-#define srepo_assert(_cond) \
-	stroll_assert("srepo", _cond)
-
-#else  /* !defined(CONFIG_SRPLUG_ASSERT) */
-
-#define srepo_assert(_cond)
-
-#endif /* defined(CONFIG_SREPO_ASSERT) */
 
 static inline __srepo_nonull(1, 2) __printf(2, 0) __warn_result
 int

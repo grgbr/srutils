@@ -10,7 +10,7 @@
 
 ssize_t
 srepo_xpath_concat(char * __restrict destination,
-                   size_t            destnation_length,
+                   size_t            destination_length,
                    char * __restrict source,
                    size_t            source_length)
 {
@@ -22,7 +22,7 @@ srepo_xpath_concat(char * __restrict destination,
 	size_t len = destination_length + source_length;
 
 	if (len) {
-		if (len < SREPO_PATH_SIZE) {
+		if (len < SREPO_XPATH_SIZE) {
 			memcpy(&destination[destination_length],
 			       source,
 			       source_length);
@@ -59,7 +59,7 @@ srepo_xpath_vprintf(char * __restrict       xpath,
 	srepo_assert(len);
 	if (len < 0)
 		return -errno;
-	else if (len >= sz)
+	else if ((size_t)len >= sz)
 		return -ENAMETOOLONG;
 
 	return (ssize_t)(length + len);
@@ -82,12 +82,19 @@ srepo_xpath_printf(char * __restrict       xpath,
 	int     len;
 
 	va_start(args, format);
+	/*
+	 * Hide the following warning since format string and arguments should
+	 * have been checked thanks to the `__printf' attribute given to this
+	 * function declaration.
+	 */
+STROLL_IGNORE_WARN("-Wformat-nonliteral")
 	len = snprintf(&xpath[length], sz, format, args);
+STROLL_RESTORE_WARN
 	va_end(args);
 	srepo_assert(len);
 	if (len < 0)
 		return -errno;
-	else if (len >= sz)
+	else if ((size_t)len >= sz)
 		return -ENAMETOOLONG;
 
 	return (ssize_t)(length + len);
@@ -103,9 +110,9 @@ srepo_xpath_create(const char * __restrict xpath, size_t length)
 	char * pth;
 
 	pth = srepo_xpath_alloc();
-	if (len)
-		memcpy(pth, xpath, len);
-	xpath[len] = '\0';
+	if (length)
+		memcpy(pth, xpath, length);
+	pth[length] = '\0';
 
 	return pth;
 }

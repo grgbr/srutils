@@ -1,4 +1,5 @@
 #include "srutils/srepo/common.h"
+#include "srutils/srepo/log.h"
 
 int
 srepo_asprintf(char ** string, const char * format, ...)
