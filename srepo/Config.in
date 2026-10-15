@@ -12,4 +12,10 @@ config SREPO_ASSERT
 	  Build srepo with assertions enabled to perform full verification of
 	  arguments consistency as well as internal state.
 
+config SREPO_PRINT
+        bool "Object printing"
+        default n
+        help
+          Build srepo with support for displaying objects content on console.
+
 # ex: ft=kconfig:

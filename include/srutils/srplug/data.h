@@ -99,4 +99,30 @@ srplug_dat_load_node(sr_session_ctx_t * session,
                      sr_data_t **       data)
 	__srplug_export;
 
+/******************************************************************************
+ * Debugging / printing YANG data nodes / trees.
+ ******************************************************************************/
+
+#if defined(CONFIG_SRPLUG_PRINT)
+
+extern sr_error_t
+srplug_dat_print_data(const sr_data_t * data,
+                      LYD_FORMAT        format,
+                      struct ly_out *   printer)
+	__srplug_export;
+
+extern sr_error_t
+srplug_open_stdio_print(struct ly_out ** printer, FILE * stdio)
+	__srplug_export;
+
+static inline void
+srplug_close_stdio_print(struct ly_out * printer)
+{
+	srplug_assert(printer);
+
+	srepo_close_stdio_print(printer);
+}
+
+#endif /* defined(CONFIG_SRPLUG_PRINT) */
+
 #endif /* _SRPLUG_DATA_H */

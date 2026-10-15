@@ -257,3 +257,48 @@ srplug_dat_load_node(sr_session_ctx_t * session,
 
 	return ret;
 }
+
+/******************************************************************************
+ * Debugging / printing YANG data nodes / trees.
+ ******************************************************************************/
+
+#if defined(CONFIG_SRPLUG_PRINT)
+
+sr_error_t
+srplug_dat_print_data(const sr_data_t * data,
+                      LYD_FORMAT        format,
+                      struct ly_out *   printer)
+{
+	srplug_assert(data);
+	srplug_assert(srepo_dat_isprint_format_valid(format));
+	srplug_assert(printer);
+
+	sr_error_t ret;
+
+	ret = srplug_dat_print_data(data, format, printer);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	return ret;
+}
+
+sr_error_t
+srplug_open_stdio_print(struct ly_out ** printer, FILE * stdio)
+{
+	srplug_assert(printer);
+	srplug_assert(stdio);
+
+	sr_error_t ret;
+
+	ret = srepo_open_stdio_print(printer, stdio);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	return ret;
+}
+
+#endif /* defined(CONFIG_SRPLUG_PRINT) */
