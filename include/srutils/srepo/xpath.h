@@ -8,7 +8,8 @@
  * XPATH parsing logic.
  ******************************************************************************/
 
-#define SREPO_XPATH_SIZE (4096U)
+#define SREPO_XPATH_SIZE \
+	STROLL_CONCAT(CONFIG_SREPO_XPATH_SIZE, U)
 
 static inline __srepo_nonull(1) __warn_result
 ssize_t

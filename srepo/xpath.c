@@ -148,7 +148,7 @@ srepo_xpath_vlog(const char * __restrict xpath,
 	char * fmt;
 	int    ret;
 
-	ret = srepo_asprintf( &fmt, "%s[path:%s]: %s.", prefix, xpath, format);
+	ret = srepo_asprintf(&fmt, "%s[path:%s]: %s.", prefix, xpath, format);
 	if (ret > 0) {
 		elog_vlog(srepo_logger, severity, fmt, args);
 		srepo_free(fmt);

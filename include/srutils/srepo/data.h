@@ -2,6 +2,7 @@
 #define _SREPO_DATA_H
 
 #include <srutils/srepo/priv/data.h>
+#include <srutils/srepo/schema.h>
 #include <srutils/srepo/xpath.h>
 #include <stdbool.h>
 
@@ -19,7 +20,7 @@ srepo_dat_node_type(const struct lyd_node * node)
 	srepo_assert(node);
 	srepo_assert(node->schema);
 
-	return node->schema->nodetype;
+	return srepo_sch_node_type(node->schema);
 }
 
 /* Get schema node of a data node. */

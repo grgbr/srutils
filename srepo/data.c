@@ -429,19 +429,6 @@ srepo_dat_print_data(const sr_data_t * data,
 
 #if defined(CONFIG_SREPO_LOG)
 
-static void
-srepo_dat_log_xpath_fail(const char * __restrict prefix)
-{
-	srepo_assert(prefix);
-
-	elog_log(srepo_logger,
-	         ELOG_WARNING_SEVERITY,
-	         "%s%slogging failure: invalid node path.",
-	         prefix,
-	         prefix[0] ? ": " : "");
-
-}
-
 void
 srepo_dat_vlog_node(const struct lyd_node * __restrict node,
                     enum elog_severity                 severity,
@@ -458,13 +445,8 @@ srepo_dat_vlog_node(const struct lyd_node * __restrict node,
 	char * path;
 
 	path = srepo_dat_node_path(node);
-	if (path) {
-		srepo_xpath_vlog(path, severity, prefix, format, args);
-		srepo_free(path);
-		return;
-	}
-
-	srepo_dat_log_xpath_fail(prefix);
+	srepo_xpath_vlog(path, severity, prefix, format, args);
+	srepo_free(path);
 }
 
 void
@@ -485,18 +467,8 @@ srepo_dat_vlog_sess_node(const sr_session_ctx_t * __restrict session,
 	char * path;
 
 	path = srepo_dat_node_path(node);
-	if (path) {
-		srepo_xpath_vlog_sess(session,
-		                      path,
-		                      severity,
-		                      prefix,
-		                      format,
-		                      args);
-		srepo_free(path);
-		return;
-	}
-
-	srepo_dat_log_xpath_fail(prefix);
+	srepo_xpath_vlog_sess(session, path, severity, prefix, format, args);
+	srepo_free(path);
 }
 
 #endif /* defined(CONFIG_SREPO_LOG) */

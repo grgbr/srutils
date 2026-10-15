@@ -10,6 +10,22 @@
 
 static inline __srepo_nonull(1)
 uint16_t
+srepo_sch_node_type(const struct lysc_node * node)
+{
+	srepo_assert(node);
+
+	return node->nodetype;
+}
+
+static inline __returns_nonull
+const char *
+srepo_sch_node_type_str(uint16_t nodetype)
+{
+	return lys_nodetype2str(nodetype);
+}
+
+static inline __srepo_nonull(1)
+uint16_t
 srepo_sch_conf_flags(const struct lysc_node * node)
 {
 	srepo_assert(node);
@@ -46,7 +62,11 @@ srepo_sch_child(const struct lysc_node * node)
 
 extern char *
 srepo_sch_node_path(const struct lysc_node * node)
-	__srepo_nonull(1) __returns_nonull __srepo_export;
+	__srepo_nonull(1) \
+	__malloc(srepo_free, 1) \
+	__returns_nonull \
+	__warn_result \
+	__srepo_export;
 
 /******************************************************************************
  * Searching / browsing YANG (compiled) schema nodes / trees.
@@ -185,7 +205,7 @@ srepo_sch_feature_status(const struct lys_module * module,
                          bool *                    enabled)
 	__srepo_nonull(1, 2, 3) __srepo_export;
 
-static inline __srepo_nonull(1) __returns_nonull
+static inline __srepo_nonull(1) __returns_nonull __warn_result
 char *
 srepo_sch_module_path(const struct lys_module * module)
 {
@@ -240,7 +260,7 @@ srepo_sch_next_module(const struct ly_ctx * context, unsigned int * index)
  * Return compiled and (features) implemented, i.e. completely resolved modules
  * with top-level data node or extension instances only.
  */
-#define cli_lys_foreach_module(_context, _index, _module) \
+#define srepo_sch_foreach_module(_context, _index, _module) \
 	for ((_index) = 0, \
 	     (_module) = srepo_sch_next_module(_context, &(_index)); \
 	     _module; \

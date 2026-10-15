@@ -21,6 +21,14 @@ config SREPO_DEBUG
 	  cleanup logic suitable for memory error detection tools such as
 	  Valgrind's Memcheck and co.
 
+config SREPO_XPATH_SIZE
+	int "Maximum XPATH size"
+	range 1024 65536
+	default 4096
+	help
+	  Maximum size available to store an XPATH including the terminating
+	  NULL byte.
+
 config SREPO_LOG
         bool "Logging"
         default y
