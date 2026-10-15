@@ -188,6 +188,14 @@ srepo_dat_free_tree(struct lyd_node * tree)
 	srepo_assert(((_flags) & (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG)) != \
 	             (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG))
 
+/* Iterate over a list of YANG data trees. */
+#define srepo_dat_foreach_tree(_data, _node) \
+	LY_LIST_FOR((_data)->tree, _node)
+
+/* Iterate over each node child. */
+#define srepo_dat_foreach_child(_node, _child) \
+	LY_LIST_FOR(lyd_child(_node), _child)
+
 extern sr_error_t
 srepo_dat_load(sr_session_ctx_t * session,
                const char *       xpath,
@@ -219,6 +227,14 @@ srepo_dat_load_node(sr_session_ctx_t * session,
 	return SR_ERR_OK;
 }
 
+static inline void
+srepo_dat_release(sr_data_t * data)
+{
+	srepo_assert(data);
+
+	sr_release_data(data);
+}
+
 /******************************************************************************
  * Debugging / printing YANG data nodes / trees.
  ******************************************************************************/
@@ -227,6 +243,12 @@ srepo_dat_load_node(sr_session_ctx_t * session,
 
 #define srepo_dat_isprint_format_valid(_fmt) \
 	(((_fmt) == LYD_XML) || ((_fmt) == LYD_JSON) || ((_fmt) == LYD_LYB))
+
+extern sr_error_t
+srepo_dat_print_stdio_data(const sr_data_t * data,
+                           LYD_FORMAT        format,
+                           FILE *            stdio)
+	__srepo_export;
 
 extern sr_error_t
 srepo_dat_print_data(const sr_data_t * data,

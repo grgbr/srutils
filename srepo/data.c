@@ -289,6 +289,28 @@ srepo_dat_load(sr_session_ctx_t * session,
 #if defined(CONFIG_SREPO_PRINT)
 
 sr_error_t
+srepo_dat_print_stdio_data(const sr_data_t * data,
+                           LYD_FORMAT        format,
+                           FILE *            stdio)
+{
+	srepo_assert(data);
+	srepo_assert(srepo_dat_isprint_format_valid(format));
+	srepo_assert(stdio);
+
+	LY_ERR ret;
+
+	ret = lyd_print_file(stdio,
+	                     data->tree,
+	                     format,
+	                     LYD_PRINT_EMPTY_LEAF_LIST |
+	                     LYD_PRINT_WD_IMPL_TAG |
+	                     LYD_PRINT_SIBLINGS);
+	srepo_assert(ret != LY_EINVAL);
+
+	return srepo_ly_error(ret);
+}
+
+sr_error_t
 srepo_dat_print_data(const sr_data_t * data,
                      LYD_FORMAT        format,
                      struct ly_out *   printer)

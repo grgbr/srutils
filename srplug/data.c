@@ -265,6 +265,26 @@ srplug_dat_load_node(sr_session_ctx_t * session,
 #if defined(CONFIG_SRPLUG_PRINT)
 
 sr_error_t
+srplug_dat_print_stdio_data(const sr_data_t * data,
+                            LYD_FORMAT        format,
+                            FILE *            stdio)
+{
+	srplug_assert(data);
+	srplug_assert(srepo_dat_isprint_format_valid(format));
+	srplug_assert(stdio);
+
+	sr_error_t ret;
+
+	ret = srepo_dat_print_stdio_data(data, format, stdio);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+	else if (ret == SR_ERR_NO_MEMORY)
+		srplug_abort();
+
+	return ret;
+}
+
+sr_error_t
 srplug_dat_print_data(const sr_data_t * data,
                       LYD_FORMAT        format,
                       struct ly_out *   printer)
