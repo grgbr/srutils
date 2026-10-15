@@ -1,0 +1,26 @@
+################################################################################
+# SPDX-License-Identifier: LGPL-3.0-only
+#
+# This file is part of srutils.
+# Copyright (C) 2026 Grégor Boirie <gregor.boirie@free.fr>
+################################################################################
+
+mainmenu "Sysrepo / libyang utility libraries build configuration"
+
+config TOPDIR
+	string
+	option env="TOPDIR"
+
+menu "Sysrepo wrapper"
+
+source "$TOPDIR/srepo/Config.in"
+
+endmenu # "Sysrepo wrapper"
+
+menu "Sysrepo plugin"
+
+source "$TOPDIR/srplug/Config.in"
+
+endmenu # "Sysrepo plugin"
+
+# ex: ft=kconfig:
