@@ -12,8 +12,14 @@ config SRPLUG_ASSERT
 	  Build srplug with assertions enabled to perform full verification of
 	  arguments consistency as well as internal state.
 
+config SRPLUG_LOG
+	bool
+	select SREPO_LOG
+	default n
+
 config SRPLUG_DEBUG
 	bool "Debug"
+	select SRPLUG_LOG
 	default n
 	help
 	  Build srplug in debug mode, enabling additional debugging messages,
@@ -27,10 +33,6 @@ config SRPLUG_PRINT
         default SREPO_PRINT
         help
           Build srplug with support for displaying objects content on console.
-
-config SRPLUG_LOG
-	bool
-	default n
 
 config SRPLUG_DAEMON
 	bool "Daemon"

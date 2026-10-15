@@ -21,11 +21,12 @@
 #define __srplug_nonull(...) \
 	__nonull(__VA_ARGS__)
 
-#define srplug_assert(_cond)
+#define srplug_assert(_cond) \
+	do { } while (0)
 
 #endif /* defined(CONFIG_SRPLUG_ASSERT) */
 
-#if defined(SRPLUG_DEBUG)
+#if defined(CONFIG_SRPLUG_DEBUG)
 
 extern sr_error_t
 srplug_change_debug(const sr_session_ctx_t * session,
@@ -35,7 +36,7 @@ srplug_change_debug(const sr_session_ctx_t * session,
                     void *                   data)
 	__srplug_nonull(1, 2) __srplug_export;
 
-#else  /* !defined(SRPLUG_DEBUG) */
+#else  /* !defined(CONFIG_SRPLUG_DEBUG) */
 
 static inline __nonull(1, 2)
 sr_error_t
@@ -48,7 +49,7 @@ srplug_change_debug(const sr_session_ctx_t * session __unused,
 	return SR_ERR_OK;
 }
 
-#endif /* defined(SRPLUG_DEBUG) */
+#endif /* defined(CONFIG_SRPLUG_DEBUG) */
 
 /**
  * Configuration data change handler function signature.

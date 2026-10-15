@@ -25,4 +25,3 @@ srepo_dat_vlog_sess_node(const sr_session_ctx_t * __restrict session,
 #endif /* defined(CONFIG_SREPO_LOG) */
 
 #endif /* _SREPO_PRIV_DATA_H */
-

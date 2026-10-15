@@ -14,7 +14,10 @@
  * Sysrepo data changes handling.
  ******************************************************************************/
 
-static const char *
+#if defined(CONFIG_SRPLUG_DEBUG)
+
+static
+const char *
 srplug_change_oper_str(sr_change_oper_t oper)
 {
 	switch (oper) {
@@ -33,10 +36,8 @@ srplug_change_oper_str(sr_change_oper_t oper)
 	return "unknown";
 }
 
-#if defined(SRPLUG_DEBUG)
-
 sr_error_t
-srplug_change_debug(const sr_session_ctx_t * session
+srplug_change_debug(const sr_session_ctx_t * session,
                     const struct lyd_node *  node,
                     sr_change_oper_t         oper,
                     const char *             old,
@@ -57,7 +58,7 @@ srplug_change_debug(const sr_session_ctx_t * session
 	return SR_ERR_OK;
 }
 
-#endif /* defined(SRPLUG_DEBUG) */
+#endif /* defined(CONFIG_SRPLUG_DEBUG) */
 
 sr_error_t
 srplug_handle_changes(sr_session_ctx_t *        session,

@@ -65,7 +65,6 @@ srepo_xpath_printf(char * __restrict       xpath,
 {
 	srepo_assert(xpath);
 	srepo_assert((length + 1) < SREPO_XPATH_SIZE);
-	srepo_assert(length == strnlen(xpath, SREPO_XPATH_SIZE));
 	srepo_assert(format);
 	srepo_assert(format[0]);
 
@@ -74,14 +73,7 @@ srepo_xpath_printf(char * __restrict       xpath,
 	int     len;
 
 	va_start(args, format);
-	/*
-	 * Hide the following warning since format string and arguments should
-	 * have been checked thanks to the `__printf' attribute given to this
-	 * function declaration.
-	 */
-STROLL_IGNORE_WARN("-Wformat-nonliteral")
-	len = snprintf(&xpath[length], sz, format, args);
-STROLL_RESTORE_WARN
+	len = vsnprintf(&xpath[length], sz, format, args);
 	va_end(args);
 	srepo_assert(len);
 	if (len < 0)
