@@ -109,6 +109,39 @@ srepo_sch_find_node(const struct lysc_node * tree, const char * path)
 }
 
 /******************************************************************************
+ * Loading Yang data from (compiled) schema nodes.
+ ******************************************************************************/
+
+/**
+ * Load a (possibly partial) subtree identified thanks to a schema node.
+ */
+extern sr_error_t
+srepo_sch_load_data(sr_session_ctx_t *       session,
+                    const struct lysc_node * node,
+                    unsigned int             depth,
+                    sr_get_oper_flag_t       flags,
+                    sr_data_t **             data)
+	__srepo_nonull(1, 2, 5) __srepo_export;
+
+/**
+ * Load an entire data subtree identified thanks to a schema node.
+ */
+extern sr_error_t
+srepo_sch_load_subtree(sr_session_ctx_t *       session,
+                       const struct lysc_node * node,
+                       sr_data_t **             data)
+	__srepo_nonull(1, 2, 3) __srepo_export;
+
+/**
+ * Load a single data node identified thanks to a schema node.
+ */
+extern sr_error_t
+srepo_sch_load_node(sr_session_ctx_t *       session,
+                    const struct lysc_node * node,
+                    sr_data_t **             data)
+	__srepo_nonull(1, 2, 3) __srepo_export;
+
+/******************************************************************************
  * Libyang (compiled) schema extension handling.
  ******************************************************************************/
 

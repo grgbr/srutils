@@ -279,19 +279,6 @@ srepo_dat_vfindf_node(const struct lyd_node * tree,
  * Loading YANG data nodes / trees.
  ******************************************************************************/
 
-#define srepo_dat_assert_get_flags(_flags) \
-	srepo_assert(!((_flags) & ~(SR_OPER_NO_STATE | \
-	                            SR_OPER_NO_CONFIG | \
-	                            SR_OPER_NO_SUBS | \
-	                            SR_OPER_NO_STORED | \
-	                            SR_OPER_WITH_ORIGIN | \
-	                            SR_OPER_NO_POLL_CACHED | \
-	                            SR_OPER_NO_RUN_CACHED | \
-	                            SR_OPER_NO_PUSH_NP_CONT | \
-	                            SR_OPER_NO_NEW_CHANGES))); \
-	srepo_assert(((_flags) & (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG)) != \
-	             (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG))
-
 sr_error_t
 srepo_dat_load_data(sr_session_ctx_t * session,
                     const char *       path,
@@ -348,6 +335,37 @@ srepo_dat_load_node(sr_session_ctx_t * session,
 	srepo_assert(*data);
 	srepo_assert((*data)->tree);
 	srepo_assert(LYD_NODE_IS_ALONE((*data)->tree));
+
+	return SR_ERR_OK;
+}
+
+sr_error_t
+srepo_dat_load_subtree(sr_session_ctx_t * session,
+                       const char *       xpath,
+                       sr_data_t **       data)
+{
+	srepo_assert(session);
+	srepo_assert(srepo_xpath_validate(xpath) > 0);
+	srepo_assert(data);
+
+	sr_error_t err;
+
+	err = sr_get_subtree(session, xpath, 0, data);
+	if (err != SR_ERR_OK) {
+		if (err == SR_ERR_NOT_FOUND)
+			/* Path is invalid: no nodes will ever match it. */
+			err = SR_ERR_INVAL_ARG;
+		else if (err == SR_ERR_NO_MEMORY)
+			srepo_abort();
+
+		return err;
+	}
+
+	if (!*data)
+		/* Valid path but no corresponding data subtree found. */
+		return SR_ERR_NOT_FOUND;
+
+	srepo_assert((*data)->tree);
 
 	return SR_ERR_OK;
 }

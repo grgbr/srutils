@@ -22,6 +22,16 @@ srepo_dat_node_type(const struct lyd_node * node)
 	return node->schema->nodetype;
 }
 
+/* Get schema node of a data node. */
+static inline __srepo_nonull(1)
+const struct lysc_node *
+srepo_dat_node_schema(const struct lyd_node * node)
+{
+	srepo_assert(node);
+
+	return lyd_node_schema(node);
+}
+
 extern char *
 srepo_dat_node_path(const struct lyd_node * node)
 	__srepo_nonull(1) __returns_nonull __srepo_export;
@@ -39,6 +49,15 @@ srepo_dat_node_value(const struct lyd_node * node)
 	srepo_assert(srepo_dat_node_type(node) & LYD_NODE_TERM);
 
 	return &((const struct lyd_node_term *)node)->value;
+}
+
+static inline __srepo_nonull(1)
+bool
+srepo_dat_is_dflt(const struct lyd_node * node)
+{
+	srepo_assert(node);
+
+	return !!lyd_is_default(node);
 }
 
 static inline const char *
@@ -380,6 +399,9 @@ srepo_dat_findf_node(const struct lyd_node * tree,
  * Loading YANG data nodes / trees.
  ******************************************************************************/
 
+/**
+ * Load multiple (possibly partial) subtrees identified by XPath.
+ */
 extern sr_error_t
 srepo_dat_load_data(sr_session_ctx_t * session,
                     const char *       xpath,
@@ -388,10 +410,22 @@ srepo_dat_load_data(sr_session_ctx_t * session,
                     sr_data_t **       data)
 	__srepo_nonull(1, 2, 5) __srepo_export;
 
+/**
+ * Load a single data node identified by XPATH.
+ */
 extern sr_error_t
 srepo_dat_load_node(sr_session_ctx_t * session,
                     const char *       xpath,
                     sr_data_t **       data)
+	__srepo_nonull(1, 2, 3) __srepo_export;
+
+/**
+ * Load an entire data subtree identified by XPath.
+ */
+extern sr_error_t
+srepo_dat_load_subtree(sr_session_ctx_t * session,
+                       const char *       xpath,
+                       sr_data_t **       data)
 	__srepo_nonull(1, 2, 3) __srepo_export;
 
 static inline __srepo_nonull(1)
