@@ -1,7 +1,7 @@
 #ifndef _SREPO_COMMON_H
 #define _SREPO_COMMON_H
 
-#include <srutils/priv/config.h>
+#include <srutils/srepo/priv/common.h>
 #include <sysrepo.h>
 #include <stroll/cdefs.h>
 #include <stdlib.h>
@@ -21,12 +21,37 @@
 
 #endif /* defined(CONFIG_SREPO_ASSERT) */
 
+static inline __srepo_nonull(1, 2) __printf(2, 0) __warn_result
+int
+srepo_vasprintf(char ** __restrict      string,
+                const char * __restrict format,
+                va_list                 args)
+{
+	srepo_assert(string);
+	srepo_assert(format);
+
+	int ret;
+
+	ret = vasprintf(string, format, args);
+	if (ret < 0) {
+		if (errno == ENOMEM)
+			abort();
+	}
+
+	return ret;
+}
+
+extern int
+srepo_asprintf(char ** __restrict string, const char * __restrict format, ...)
+	__srepo_nonull(1, 2) __printf(2, 3) __warn_result __srepo_export;
+
 extern sr_error_t
 srepo_acquire_context(sr_session_ctx_t *     session,
                       const struct ly_ctx ** context)
-	__srepo_export;
+	__srepo_nonull(1, 2) __srepo_export;
 
-static inline void
+static inline __srepo_nonull(1)
+void
 srepo_release_context(sr_session_ctx_t * session)
 {
 	srepo_assert(session);
@@ -34,7 +59,12 @@ srepo_release_context(sr_session_ctx_t * session)
 	sr_session_release_context(session);
 }
 
-static inline void
+extern const char *
+srepo_dstore_str(sr_datastore_t ds)
+	__srepo_export;
+
+static inline __srepo_nonull(1)
+void
 srepo_switch_dstore(sr_session_ctx_t * session, sr_datastore_t dstore)
 {
 	srepo_assert(session);
@@ -45,55 +75,27 @@ srepo_switch_dstore(sr_session_ctx_t * session, sr_datastore_t dstore)
 	srepo_assert(ret == SR_ERR_OK);
 }
 
-static inline sr_error_t
+extern sr_error_t
 srepo_apply_changes(sr_session_ctx_t * session)
-{
-	srepo_assert(session);
-
-	sr_error_t ret;
-
-	ret = sr_apply_changes(session, 0);
-	srepo_assert(ret != SR_ERR_INVAL_ARG);
-
-	return ret;
-}
-
-extern const char *
-srepo_dstore_str(sr_datastore_t ds)
-	__srepo_export;
+	__srepo_nonull(1) __warn_result;
 
 /*
- * Replace an entire sysrepo datastore with the data tree given in argument.
+ * Replace an entire sysrepo configuration datastore with the data tree given in
+ * argument.
+ *
+ * Datastore currently attached to @p session session MUST be either
+ * `SR_DS_STARTUP`, `SR_DS_RUNNING` or `SR_DS_CANDIDATE`.
+ *
+ * In addition, the @p tree given in argument MUST have been created using the
+ * YANG context related to the session given in argument.
  *
  * Note that `tree' data tree will be freed once this function call has
  * returned.
  */
-static inline sr_error_t
+extern sr_error_t
 srepo_replace_config(sr_session_ctx_t * session,
                      const char *       module,
                      struct lyd_node *  tree)
-{
-	srepo_assert(session);
-	srepo_assert(module);
-	srepo_assert(module[0]);
-	srepo_assert(tree);
-
-	int ret;
-
-	ret = sr_replace_config(session, module, tree, 0);
-	if (ret == SR_ERR_OK)
-		return SR_ERR_OK;
-
-	/*
-	 * Session datastore MUST be either startup, running or
-	 * candidate.
-	 * In addition, the lyd_node tree given in argument MUST have
-	 * been created using the YANG context related to the session
-	 * given in argument.
-	 */
-	srepo_assert(ret != SR_ERR_INVAL_ARG);
-
-	return ret;
-}
+	__srepo_nonull(1, 2, 3) __warn_result;
 
 #endif /* _SREPO_COMMON_H */
