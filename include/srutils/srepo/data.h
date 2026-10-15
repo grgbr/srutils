@@ -219,6 +219,37 @@ srepo_dat_merge_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
 	return srepo_dat_merge_batch(session, data->tree);
 }
 
+/**
+ * Prepare a batch of changes for replacement.
+ *
+ * @param[in] session Session to prepare the batch of changes for
+ * @param[in] trees   List of top-level change / edit trees
+ */
+static inline sr_error_t
+srepo_dat_replace_batch(sr_session_ctx_t *      session,
+                        const struct lyd_node * trees)
+{
+	srepo_assert(session);
+	srepo_assert(trees);
+
+	sr_error_t ret;
+
+	ret = sr_edit_batch(session, trees, "replace");
+	srepo_assert(ret != SR_ERR_INVAL_ARG);
+
+	return ret;
+}
+
+static inline sr_error_t
+srepo_dat_replace_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
+{
+	srepo_assert(session);
+	srepo_assert(data);
+	srepo_assert(data->tree);
+
+	return srepo_dat_replace_batch(session, data->tree);
+}
+
 /******************************************************************************
  * Searching YANG data nodes / trees.
  ******************************************************************************/
