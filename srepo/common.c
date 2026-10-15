@@ -1,4 +1,5 @@
 #include "common.h"
+#include <srutils/srepo/xpath.h>
 
 sr_error_t
 srepo_ly_error(LY_ERR error)
@@ -125,7 +126,26 @@ srepo_apply_changes(sr_session_ctx_t * session)
 
 	err = sr_apply_changes(session, 0);
 	if (err == SR_ERR_OK)
-		return err;
+		return SR_ERR_OK;
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
+srepo_discard_oper_changes(sr_session_ctx_t * session, const char * module)
+{
+	srepo_assert(session);
+	srepo_assert(!module || module[0]);
+
+	sr_error_t err;
+
+	err = sr_discard_oper_changes(session, module, 0);
+	if (err == SR_ERR_OK)
+		return SR_ERR_OK;
 
 	srepo_assert(err != SR_ERR_INVAL_ARG);
 	if (err == SR_ERR_NO_MEMORY)
@@ -160,6 +180,8 @@ srepo_replace_config(sr_session_ctx_t * session,
 	return err;
 }
 
+#if defined(CONFIG_SREPO_PRINT)
+
 sr_error_t
 srepo_open_stdio_print(struct ly_out ** printer, FILE * stdio)
 {
@@ -175,3 +197,5 @@ srepo_open_stdio_print(struct ly_out ** printer, FILE * stdio)
 
 	return srepo_ly_error(ret);
 }
+
+#endif /* defined(CONFIG_SREPO_PRINT) */

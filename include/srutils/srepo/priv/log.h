@@ -6,11 +6,18 @@
 
 #if defined(CONFIG_SREPO_LOG)
 
-extern struct elog * srepo_logger;
+extern struct elog * srepo_logger __srepo_export;
+
+extern void
+srepo_vlog(enum elog_severity      severity,
+           const char * __restrict prefix,
+           const char * __restrict format,
+           va_list                 args)
+	__srepo_nonull(2, 3) __printf(3, 0) __srepo_export;
 
 extern void
 srepo_vlog_conn(const sr_conn_ctx_t * __restrict connection,
-                elog_severity                    severity,
+                enum elog_severity               severity,
                 const char * __restrict          prefix,
                 const char * __restrict          format,
                 va_list                          args)
@@ -18,7 +25,7 @@ srepo_vlog_conn(const sr_conn_ctx_t * __restrict connection,
 
 extern void
 srepo_vlog_sess(const sr_session_ctx_t * __restrict session,
-                elog_severity                       severity,
+                enum elog_severity                  severity,
                 const char * __restrict             prefix,
                 const char * __restrict             format,
                 va_list                             args)

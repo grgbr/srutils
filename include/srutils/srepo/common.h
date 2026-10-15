@@ -2,8 +2,6 @@
 #define _SREPO_COMMON_H
 
 #include <srutils/srepo/priv/common.h>
-#include <sysrepo.h>
-#include <stdlib.h>
 #include <stdarg.h>
 
 static inline __srepo_nonull(1, 2) __printf(2, 0) __warn_result
@@ -75,7 +73,11 @@ srepo_switch_dstore(sr_session_ctx_t * session, sr_datastore_t dstore)
 
 extern sr_error_t
 srepo_apply_changes(sr_session_ctx_t * session)
-	__srepo_nonull(1) __warn_result;
+	__srepo_nonull(1) __warn_result __srepo_export;
+
+extern sr_error_t
+srepo_discard_oper_changes(sr_session_ctx_t * session, const char * module)
+	__srepo_nonull(1) __srepo_export;
 
 /*
  * Replace an entire sysrepo configuration datastore with the data tree given in
@@ -94,13 +96,13 @@ extern sr_error_t
 srepo_replace_config(sr_session_ctx_t * session,
                      const char *       module,
                      struct lyd_node *  tree)
-	__srepo_nonull(1, 2, 3) __warn_result;
+	__srepo_nonull(1, 2, 3) __warn_result __srepo_export;
 	
 #if defined(CONFIG_SREPO_PRINT)
 
 extern sr_error_t
 srepo_open_stdio_print(struct ly_out ** printer, FILE * stdio)
-	__srepo_nonull(1, 2) __warn_result;
+	__srepo_nonull(1, 2) __warn_result __srepo_export;
 
 static inline __srepo_nonull(1)
 void

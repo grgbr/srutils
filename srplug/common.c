@@ -1,5 +1,5 @@
-#include "common.h"
-#include "srutils/srplug/data.h"
+#include "log.h"
+#include "srutils/srepo/data.h"
 #include "srutils/srepo/schema.h"
 
 #if defined(CONFIG_SRPLUG_DAEMON)
@@ -10,66 +10,50 @@
 #error Invalid build configuration: no implementation found !
 #endif
 
-char *
-srplug_strdup(const char * string)
-{
-	srplug_assert(string);
-
-	void * str;
-
-	str = strdup(string);
-	if (!str)
-		srplug_abort();
-
-	return str;
-}
-
 /******************************************************************************
  * Sysrepo data changes handling.
  ******************************************************************************/
 
+static const char *
+srplug_change_oper_str(sr_change_oper_t oper)
+{
+	switch (oper) {
+	case SR_OP_CREATED:
+		return "created";
+	case SR_OP_MODIFIED:
+		return "modified";
+	case SR_OP_DELETED:
+		return "deleted";
+	case SR_OP_MOVED:
+		return "moved";
+	default:
+		break;
+	}
+
+	return "unknown";
+}
+
 #if defined(SRPLUG_DEBUG)
 
 sr_error_t
-srplug_change_debug(const struct lyd_node * node,
-                    sr_change_oper_t        oper,
-                    const char *            old,
-                    void *                  data)
+srplug_change_debug(const sr_session_ctx_t * session
+                    const struct lyd_node *  node,
+                    sr_change_oper_t         oper,
+                    const char *             old,
+                    void *                   data)
 {
+	srplug_assert(session);
 	srplug_assert(node);
 
-	const char * op;
-
-	switch (oper) {
-	case SR_OP_CREATED:
-		op = "create";
-		break;
-
-	case SR_OP_MODIFIED:
-		op = "modify";
-		break;
-
-	case SR_OP_DELETED:
-		op = "delete";
-		break;
-
-	case SR_OP_MOVED:
-		op = "move";
-		break;
-
-	default:
-		srplug_assert(0);
-	}
-
-	srplug_node_debug(node,
-	                  "%s change event: %s%s%s --> '%s' [data:%p]",
-	                  op,
-	                  old ? "'" : "",
-	                  old ? old : "none",
-	                  old ? "'" : "",
-	                  srepo_dat_node_as_str(node),
-	                  data);
-
+	srplug_sess_node_debug(session,
+	                       node,
+	                       "%s change event: %s%s%s --> '%s' [data:%p]",
+	                       srplug_change_oper_str(oper),
+	                       old ? "'" : "",
+	                       old ? old : "none",
+	                       old ? "'" : "",
+	                       srepo_dat_node_as_str(node),
+	                       data);
 	return SR_ERR_OK;
 }
 
@@ -83,21 +67,22 @@ srplug_handle_changes(sr_session_ctx_t *        session,
 {
 	srplug_assert(session);
 	srplug_assert(xpath);
-	srplug_assert(xpath[0]);
 	srplug_assert(handle);
 
 	sr_change_iter_t * iter;
 	sr_error_t         ret;
 
-	ret = sr_get_changes_iter(session, xpath, &iter);
-	if (ret != SR_ERR_OK) {
-		srplug_assert(ret != SR_ERR_INVAL_ARG);
-
-		if (ret == SR_ERR_NO_MEMORY)
-			srplug_abort();
-
-		return ret;
+	if (srepo_xpath_validate(xpath) < 0) {
+		srepo_assert(0);
+		return SR_ERR_INTERNAL;
 	}
+
+	ret = sr_get_changes_iter(session, xpath, &iter);
+	srepo_assert(ret != SR_ERR_INVAL_ARG);
+	if (ret == SR_ERR_NO_MEMORY)
+		srepo_abort();
+	else if (ret != SR_ERR_OK)
+		return ret;
 
 	do {
 		sr_change_oper_t        oper;
@@ -111,16 +96,13 @@ srplug_handle_changes(sr_session_ctx_t *        session,
 		                              &old,
 		                              NULL,
 		                              NULL);
-		if (ret != SR_ERR_OK) {
-			srplug_assert(ret != SR_ERR_INVAL_ARG);
-
-			if (ret == SR_ERR_NO_MEMORY)
-				srplug_abort();
-
+		srepo_assert(ret != SR_ERR_INVAL_ARG);
+		if (ret == SR_ERR_NO_MEMORY)
+			srepo_abort();
+		if (ret != SR_ERR_OK)
 			break;
-		}
 
-		ret = handle(node, oper, old, data);
+		ret = handle(session, node, oper, old, data);
 	} while (ret == SR_ERR_OK);
 
 	sr_free_change_iter(iter);
@@ -144,37 +126,16 @@ struct srplug_change_dispatch {
 
 #define srplug_assert_change_hndlr(_hndlr) \
 	srplug_assert(_hndlr); \
-	srplug_assert((_hndlr)->name); \
-	srplug_assert((_hndlr)->name[0]); \
+	srplug_assert(srepo_xpath_validate_node((_hndlr)->name)); \
 	srplug_assert((_hndlr)->handle)
 
-static const char *
-srplug_change_oper_str(sr_change_oper_t oper)
-{
-	switch (oper) {
-	case SR_OP_CREATED:
-		return "created";
-	case SR_OP_MODIFIED:
-		return "modified";
-	case SR_OP_DELETED:
-		return "deleted";
-	case SR_OP_MOVED:
-		return "moved";
-	default:
-		break;
-	}
-
-	return "unknown";
-}
-
 static sr_error_t
-srplug_dispatch_child_change(const struct lyd_node * node,
+srplug_dispatch_child_change(sr_session_ctx_t *      session,
+                             const struct lyd_node * node,
                              sr_change_oper_t        oper,
                              const char *            old,
                              void *                  dispatch)
 {
-	srplug_assert(node);
-	srplug_assert(node);
 	srplug_assert_change_dispatch((const struct srplug_change_dispatch *)
 	                              dispatch);
 
@@ -183,8 +144,10 @@ srplug_dispatch_child_change(const struct lyd_node * node,
 	const struct srplug_change_dispatch * disp = dispatch;
 
 	name = srepo_dat_node_name(node);
-	srplug_assert(name);
-	srplug_assert(name[0]);
+	if (!name) {
+		srplug_sess_node_warn(session, node, "invalid node name");
+		return SR_ERR_INVAL_ARG;
+	}
 
 	for (h = 0; h < disp->nr; h++) {
 		const struct srplug_change_hndlr * hndlr = &disp->hndlrs[h];
@@ -193,14 +156,21 @@ srplug_dispatch_child_change(const struct lyd_node * node,
 
 		if ((!hndlr->feature || hndlr->feature->on) &&
 		    !strcmp(name, hndlr->name)) {
-			srplug_node_debug(node,
-			                  "handling '%s' change operation",
-			                  srplug_change_oper_str(oper));
-			return hndlr->handle(node, oper, old, disp->data);
+			srplug_sess_node_debug(session,
+			                       node,
+			                       "handling '%s' change operation",
+			                       srplug_change_oper_str(oper));
+			return hndlr->handle(session,
+			                     node,
+			                     oper,
+			                     old,
+			                     disp->data);
 		}
 	}
 
-	srplug_node_debug(node, "no change handler found: ignoring");
+	srplug_sess_node_debug(session,
+	                       node,
+	                       "no change handler found: ignoring");
 
 	return SR_ERR_OK;
 }
@@ -213,12 +183,10 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
                              void *                             data)
 {
 	srplug_assert(session);
-	srplug_assert(xpath);
-	srplug_assert(xpath[0]);
+	srplug_assert(srepo_xpath_validate(xpath) > 0);
 	srplug_assert(handlers);
 	srplug_assert(nr);
 
-	size_t                              len = strlen(xpath);
 	char *                              pth;
 	int                                 ret;
 	const struct srplug_change_dispatch disp = {
@@ -227,79 +195,18 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
 		.data   = data
 	};
 
-	pth = srplug_malloc(len + 2 + 1);
-	memcpy(pth, xpath, len);
-	memcpy(&pth[len], "/*", sizeof("/*"));
+	ret = srepo_xpath_createf(&pth, "%s/*", xpath);
+	srplug_assert(ret);
+	if (ret < 0)
+		return srepo_sys_error(ret);
 
 	ret = srplug_handle_changes(session,
 	                            pth,
 	                            srplug_dispatch_child_change,
 	                            (void *)&disp);
-	srplug_free(pth);
+	srepo_free(pth);
 
 	return ret;
-}
-
-sr_error_t
-srplug_apply_changes(sr_session_ctx_t * session)
-{
-	srplug_assert(session);
-
-	sr_error_t ret;
-
-	ret = srepo_apply_changes(session);
-	if (ret == SR_ERR_OK)
-		return SR_ERR_OK;
-	else if (ret == SR_ERR_NO_MEMORY)
-		srplug_abort();
-
-	srplug_warn("'%s': cannot apply changes: %s",
-	            srepo_dstore_str(sr_session_get_ds(session)),
-	            sr_strerror(ret));
-
-	return ret;
-}
-
-sr_error_t
-srplug_replace_config(sr_session_ctx_t * session,
-                      const char *       module,
-                      struct lyd_node *  tree)
-{
-	srplug_assert(session);
-	srplug_assert(module);
-	srplug_assert(module[0]);
-	srplug_assert(tree);
-
-	sr_error_t ret;
-
-	ret = srepo_replace_config(session, module, tree);
-	if (ret == SR_ERR_OK)
-		return SR_ERR_OK;
-	else if (ret == SR_ERR_NO_MEMORY)
-		srplug_abort();
-
-	srplug_warn("'%s': cannot replace datastore: %s",
-	            srepo_dstore_str(sr_session_get_ds(session)),
-	            sr_strerror(ret));
-
-	return ret;
-}
-
-const struct lys_module *
-srplug_find_module(const struct ly_ctx * context, const char * module)
-{
-	srplug_assert(context);
-	srplug_assert(module);
-
-	const struct lys_module * mod;
-
-	mod = srepo_sch_find_module(context, module);
-	if (mod)
-		return mod;
-
-	srplug_notice("'%s': missing YANG module", module);
-
-	return NULL;
 }
 
 sr_error_t
@@ -307,12 +214,21 @@ srplug_probe_feature(const struct ly_ctx * context,
                      const char *          module,
                      struct srplug_feat *  feature)
 {
+	srplug_assert(context);
+	srplug_assert(module);
+	srepo_assert(module[0]);
+	srplug_assert(feature);
+	srplug_assert(feature->name);
+	srplug_assert(feature->name[0]);
+
 	const struct lys_module * mod;
 	LY_ERR                    ret;
 
-	mod = srplug_find_module(context, module);
-	if (!mod)
+	mod = srepo_sch_find_module(context, module);
+	if (!mod) {
+		srplug_warn("'%s' module: not found", mod->name);
 		return SR_ERR_NOT_FOUND;
+	}
 
 	ret = lys_feature_value(mod, feature->name);
 	switch (ret) {
@@ -331,28 +247,9 @@ srplug_probe_feature(const struct ly_ctx * context,
 		srplug_assert(0);
 	}
 
-	srplug_warn("'%s': YANG feature '%s' not found",
+	srplug_warn("'%s' module: '%s' feature: not found",
 	            mod->name,
 	            feature->name);
 
 	return SR_ERR_NOT_FOUND;
-}
-
-sr_error_t
-srplug_acquire_context(sr_session_ctx_t *     session,
-                       const struct ly_ctx ** context)
-{
-	srplug_assert(context);
-
-	sr_error_t ret;
-
-	ret = srepo_acquire_context(session, context);
-	if (ret == SR_ERR_OK)
-		return SR_ERR_OK;
-	else if (ret == SR_ERR_NO_MEMORY)
-		srplug_abort();
-
-	srplug_warn("cannot acquire context: %s", sr_strerror(ret));
-
-	return ret;
 }
