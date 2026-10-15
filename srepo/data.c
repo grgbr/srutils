@@ -33,9 +33,9 @@ srepo_dat_node_path(const struct lyd_node * node)
 		return pth;
 	}
 
-	srepo_free(path);
-
-	return NULL;
+	/* No more memory or SREPO_XPATH_SIZE not large enought ! */
+	srepo_assert(0);
+	srepo_abort();
 }
 
 /******************************************************************************
