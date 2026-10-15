@@ -47,6 +47,29 @@ srplug_dat_create_leaf(struct lyd_node *  parent,
 	__srplug_export;
 
 extern sr_error_t
+srplug_dat_create_leaf(struct lyd_node *  parent,
+                       const char *       path,
+                       const char *       value,
+                       struct lyd_node ** leaf)
+	__srepo_export;
+
+extern sr_error_t
+srplug_dat_create_leaf_vprintf(struct lyd_node *  parent,
+                               const char *       path,
+                               struct lyd_node ** leaf,
+                               const char *       format,
+                               va_list            args)
+	__srepo_export;
+
+extern sr_error_t
+srplug_dat_create_leaf_printf(struct lyd_node *  parent,
+                              const char *       path,
+                              struct lyd_node ** leaf,
+                              const char *       format,
+                              ...)
+	__srepo_export;
+
+extern sr_error_t
 srplug_dat_populate_defaults(struct lyd_node *  tree,
                              uint32_t           options,
                              struct lyd_node ** diff)
