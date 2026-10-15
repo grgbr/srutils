@@ -43,6 +43,24 @@ srepo_sch_status_flags(const struct lysc_node * node)
 }
 
 static inline __srepo_nonull(1)
+bool
+srepo_sch_is_mandatory(const struct lysc_node * node)
+{
+	srepo_assert(node);
+
+	return node->flags & LYS_MAND_TRUE;
+}
+
+static inline __srepo_nonull(1)
+bool
+srepo_sch_is_key(const struct lysc_node * node)
+{
+	srepo_assert(node);
+
+	return lysc_is_key(node);
+}
+
+static inline __srepo_nonull(1)
 const struct lysc_node *
 srepo_sch_parent(const struct lysc_node * node)
 {
