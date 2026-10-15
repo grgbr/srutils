@@ -4,6 +4,8 @@
 #include <srutils/priv/config.h>
 #include <srutils/srepo/common.h>
 
+#define __srplug_export __export_public
+
 #if defined(CONFIG_SRPLUG_ASSERT)
 
 #include <stroll/assert.h>
@@ -179,20 +181,33 @@
 
 #endif /* defined(CONFIG_SRPLUG_LOG) */
 
-extern void *
-srplug_malloc(size_t size);
-
 static inline void
 srplug_free(void * data)
 {
 	free(data);
 }
 
-static inline void __noreturn
-srplug_abort(void)
+#if defined(SRPLUG_DEBUG)
+
+extern sr_error_t
+srplug_change_debug(const struct lyd_node * node,
+                    sr_change_oper_t        oper,
+                    const char *            old,
+                    void *                  data)
+	__srplug_export;
+
+#else  /* !defined(SRPLUG_DEBUG) */
+
+static inline sr_error_t
+srplug_change_debug(const struct lyd_node * node __unused,
+                    sr_change_oper_t        oper __unused,
+                    const char *            old __unused,
+                    void *                  data __unused)
 {
-	abort();
+	return SR_ERR_OK;
 }
+
+#endif /* defined(SRPLUG_DEBUG) */
 
 /**
  * Configuration data change handler function signature.
@@ -210,7 +225,8 @@ extern sr_error_t
 srplug_handle_changes(sr_session_ctx_t *        session,
                       const char *              xpath,
                       srplug_handle_change_fn * handle,
-                      void *                    data);
+                      void *                    data)
+	__srplug_export;
 
 /**
  * Configuration data change HaNDLeR.
@@ -229,7 +245,8 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
                              const char *                       xpath,
                              const struct srplug_change_hndlr * handlers,
                              unsigned int                       nr,
-                             void *                             data);
+                             void *                             data)
+	__srplug_export;
 
 struct srplug_change_sub {
 	const char *        module;
@@ -306,14 +323,35 @@ struct srplug_sub {
 extern sr_error_t
 srplug_replace_config(sr_session_ctx_t * session,
                       const char *       module,
-                      struct lyd_node *  tree);
+                      struct lyd_node *  tree)
+	__srplug_export;
 
 extern const struct lys_module *
-srplug_find_module(const struct ly_ctx * context, const char * module);
+srplug_find_module(const struct ly_ctx * context, const char * module)
+	__srplug_export;
+
+struct srplug_feat {
+	const char * const name;
+	bool               on;
+};
+
+#define SRPLUG_FEAT_SETUP(_name) \
+	{ \
+		.name   = _name, \
+		.on     = false \
+	}
+
+extern sr_error_t
+srplug_probe_feature(const struct ly_ctx * context,
+                     const char *          module,
+                     struct srplug_feat *  feature)
+	__srplug_export;
+
 
 extern sr_error_t
 srplug_acquire_context(sr_session_ctx_t *     session,
-                       const struct ly_ctx ** context);
+                       const struct ly_ctx ** context)
+	__srplug_export;
 
 static inline void
 srplug_release_context(sr_session_ctx_t * session)

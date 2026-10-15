@@ -6,6 +6,8 @@
 #include <stroll/cdefs.h>
 #include <stdlib.h>
 
+#define __srepo_export __export_public
+
 #if defined(CONFIG_SREPO_ASSERT)
 
 #include <stroll/assert.h>
@@ -21,7 +23,8 @@
 
 extern sr_error_t
 srepo_acquire_context(sr_session_ctx_t *     session,
-                      const struct ly_ctx ** context);
+                      const struct ly_ctx ** context)
+	__srepo_export;
 
 static inline void
 srepo_release_context(sr_session_ctx_t * session)
@@ -32,7 +35,8 @@ srepo_release_context(sr_session_ctx_t * session)
 }
 
 extern const char *
-srepo_dstore_str(sr_datastore_t ds);
+srepo_dstore_str(sr_datastore_t ds)
+	__srepo_export;
 
 /*
  * Replace an entire sysrepo datastore with the data tree given in argument.
