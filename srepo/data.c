@@ -227,7 +227,7 @@ srepo_dat_vcreatef_leaf(struct lyd_node *  parent,
 }
 
 /******************************************************************************
- * Searching YANG data nodes / trees.
+ * Searching / browsing YANG data nodes / trees.
  ******************************************************************************/
 
 sr_error_t

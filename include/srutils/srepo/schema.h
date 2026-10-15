@@ -63,7 +63,6 @@ srepo_sch_child(const struct lysc_node * node)
 extern char *
 srepo_sch_node_path(const struct lysc_node * node)
 	__srepo_nonull(1) \
-	__malloc(srepo_free, 1) \
 	__returns_nonull \
 	__warn_result \
 	__srepo_export;

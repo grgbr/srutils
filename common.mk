@@ -3,6 +3,7 @@ srutils-common-cflags := -Wall \
                          -Wformat=2 \
                          -Wundef \
                          -Wshadow \
+                         -Wcast-align \
                          -Wmissing-declarations \
                          -D_GNU_SOURCE \
                          -I $(TOPDIR)/include \
