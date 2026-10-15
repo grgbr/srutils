@@ -220,7 +220,7 @@ srplug_daemon_srlog_cb(sr_log_level_t level, const char * message)
 		srplug_assert(0);
 	}
 
-	srplug_log(svrt, "%s", message);
+	elog_log(srepo_logger, svrt, "srplug: %s", message);
 }
 
 static void
@@ -1536,7 +1536,8 @@ srplug_daemon_open(struct srplug_daemon * daemon, unsigned int poll_nr)
 	/* connect to sysrepo */
 	err = sr_connect(SR_CONN_DEFAULT, &conn);
 	if (err != SR_ERR_OK) {
-		srplug_err("cannot connect to datastore: %s", srepo_errstr(err));
+		srplug_err("cannot connect to datastore: %s",
+		           srepo_errstr(err));
 		return -EPERM;
 	}
 

@@ -73,12 +73,12 @@ srplug_handle_changes(sr_session_ctx_t *        session,
 	sr_error_t         ret;
 
 	if (srepo_xpath_validate(xpath) < 0) {
-		srepo_assert(0);
+		srplug_assert(0);
 		return SR_ERR_INTERNAL;
 	}
 
 	ret = sr_get_changes_iter(session, xpath, &iter);
-	srepo_assert(ret != SR_ERR_INVAL_ARG);
+	srplug_assert(ret != SR_ERR_INVAL_ARG);
 	if (ret == SR_ERR_NO_MEMORY)
 		srepo_abort();
 	else if (ret != SR_ERR_OK)
@@ -96,7 +96,7 @@ srplug_handle_changes(sr_session_ctx_t *        session,
 		                              &old,
 		                              NULL,
 		                              NULL);
-		srepo_assert(ret != SR_ERR_INVAL_ARG);
+		srplug_assert(ret != SR_ERR_INVAL_ARG);
 		if (ret == SR_ERR_NO_MEMORY)
 			srepo_abort();
 		if (ret != SR_ERR_OK)
@@ -216,7 +216,7 @@ srplug_probe_feature(const struct ly_ctx * context,
 {
 	srplug_assert(context);
 	srplug_assert(module);
-	srepo_assert(module[0]);
+	srplug_assert(module[0]);
 	srplug_assert(feature);
 	srplug_assert(feature->name);
 	srplug_assert(feature->name[0]);
@@ -252,4 +252,22 @@ srplug_probe_feature(const struct ly_ctx * context,
 	            feature->name);
 
 	return SR_ERR_NOT_FOUND;
+}
+
+const struct lys_module *
+srplug_find_module(const struct ly_ctx * context, const char * module)
+{
+	srplug_assert(context);
+	srplug_assert(module);
+	srplug_assert(module[0]);
+
+	const struct lys_module * mod;
+
+	mod = srepo_sch_find_module(context, module);
+	if (mod)
+		return mod;
+
+	srplug_warn("'%s' module: not found", module);
+
+	return NULL;
 }
