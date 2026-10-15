@@ -37,17 +37,13 @@ srepo_xpath_vprintf(char * __restrict       xpath,
 {
 	srepo_assert(xpath);
 	srepo_assert((length + 1) < SREPO_XPATH_SIZE);
-	srepo_assert(length == strnlen(xpath, SREPO_XPATH_SIZE));
 	srepo_assert(format);
 	srepo_assert(format[0]);
 
 	size_t sz = SREPO_XPATH_SIZE - length;
 	int    len;
 
-	len = vsnprintf(&xpath[length],
-	                sz,
-	                format,
-	                args);
+	len = vsnprintf(&xpath[length], sz, format, args);
 	srepo_assert(len);
 	if (len < 0)
 		return -errno;
