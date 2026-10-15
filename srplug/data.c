@@ -275,7 +275,7 @@ srplug_dat_print_data(const sr_data_t * data,
 
 	sr_error_t ret;
 
-	ret = srplug_dat_print_data(data, format, printer);
+	ret = srepo_dat_print_data(data, format, printer);
 	if (ret == SR_ERR_OK)
 		return SR_ERR_OK;
 	else if (ret == SR_ERR_NO_MEMORY)
