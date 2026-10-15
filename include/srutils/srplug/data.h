@@ -92,11 +92,11 @@ srplug_dat_print_stdio_data(const sr_data_t * data,
 	__srepo_export;
 
 extern sr_error_t
-srplug_dat_load(sr_session_ctx_t * session,
-                const char *       xpath,
-                unsigned int       depth,
-                sr_get_oper_flag_t flags,
-                sr_data_t **       data)
+srplug_dat_load_data(sr_session_ctx_t * session,
+                     const char *       xpath,
+                     unsigned int       depth,
+                     sr_get_oper_flag_t flags,
+                     sr_data_t **       data)
 	__srepo_export;
 
 extern sr_error_t
@@ -106,11 +106,26 @@ srplug_dat_load_node(sr_session_ctx_t * session,
 	__srplug_export;
 
 static inline void
-srplug_dat_release(sr_data_t * data)
+srplug_dat_release_data(sr_data_t * data)
 {
 	srplug_assert(data);
 
-	srepo_dat_release(data);
+	srepo_dat_release_data(data);
+}
+
+extern sr_error_t
+srplug_dat_merge_batch(sr_session_ctx_t *      session,
+                       const struct lyd_node * trees)
+	__srplug_export;
+
+static inline sr_error_t
+srplug_dat_merge_data_batch(sr_session_ctx_t * session, const sr_data_t * data)
+{
+	srplug_assert(session);
+	srplug_assert(data);
+	srplug_assert(data->tree);
+
+	return srplug_dat_merge_batch(session, data->tree);
 }
 
 /******************************************************************************
