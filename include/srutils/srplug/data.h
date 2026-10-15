@@ -62,7 +62,15 @@ srplug_dat_free_tree(struct lyd_node * tree)
  * Searching for / loading YANG data nodes / trees.
  ******************************************************************************/
 
-extern int
+extern sr_error_t
+srplug_dat_load(sr_session_ctx_t * session,
+                const char *       xpath,
+                unsigned int       depth,
+                sr_get_oper_flag_t flags,
+                sr_data_t **       data)
+	__srepo_export;
+
+extern sr_error_t
 srplug_dat_load_node(sr_session_ctx_t * session,
                      const char *       xpath,
                      sr_data_t **       data)

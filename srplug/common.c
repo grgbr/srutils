@@ -10,6 +10,20 @@
 #error Invalid build configuration: no implementation found !
 #endif
 
+char *
+srplug_strdup(const char * string)
+{
+	srplug_assert(string);
+
+	void * str;
+
+	str = strdup(string);
+	if (!str)
+		srplug_abort();
+
+	return str;
+}
+
 /******************************************************************************
  * Sysrepo data changes handling.
  ******************************************************************************/

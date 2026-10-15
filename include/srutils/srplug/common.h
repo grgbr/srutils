@@ -181,6 +181,10 @@
 
 #endif /* defined(CONFIG_SRPLUG_LOG) */
 
+extern char *
+srplug_strdup(const char * string)
+	__srplug_export;
+
 static inline void
 srplug_free(void * data)
 {

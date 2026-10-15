@@ -149,7 +149,28 @@ srepo_dat_free_tree(struct lyd_node * tree)
  * Searching for / loading YANG data nodes / trees.
  ******************************************************************************/
 
-static inline int
+#define srepo_dat_assert_flags(_flags) \
+	srepo_assert(!((_flags) & ~(SR_OPER_NO_STATE | \
+	                            SR_OPER_NO_CONFIG | \
+	                            SR_OPER_NO_SUBS | \
+	                            SR_OPER_NO_STORED | \
+	                            SR_OPER_WITH_ORIGIN | \
+	                            SR_OPER_NO_POLL_CACHED | \
+	                            SR_OPER_NO_RUN_CACHED | \
+	                            SR_OPER_NO_PUSH_NP_CONT | \
+	                            SR_OPER_NO_NEW_CHANGES))); \
+	srepo_assert(((_flags) & (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG)) != \
+	             (SR_OPER_NO_STATE | SR_OPER_NO_CONFIG))
+
+extern sr_error_t
+srepo_dat_load(sr_session_ctx_t * session,
+               const char *       xpath,
+               unsigned int       depth,
+               sr_get_oper_flag_t flags,
+               sr_data_t **       data)
+	__srepo_export;
+
+static inline sr_error_t
 srepo_dat_load_node(sr_session_ctx_t * session,
                     const char *       xpath,
                     sr_data_t **       data)
