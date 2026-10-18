@@ -14,7 +14,8 @@ extern const char *
 srepo_dat_node_name(const struct lyd_node * node)
 	__srepo_nonull(1) __warn_result __srepo_export;
 
-static inline uint16_t
+static inline __srepo_nonull(1) __warn_result
+uint16_t
 srepo_dat_node_type(const struct lyd_node * node)
 {
 	srepo_assert(node);
@@ -24,13 +25,22 @@ srepo_dat_node_type(const struct lyd_node * node)
 }
 
 /* Get schema node of a data node. */
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __warn_result
 const struct lysc_node *
 srepo_dat_node_schema(const struct lyd_node * node)
 {
 	srepo_assert(node);
 
 	return lyd_node_schema(node);
+}
+
+static inline __srepo_nonull(1) __warn_result
+struct lyd_node *
+srepo_dat_node_parent(const struct lyd_node * node)
+{
+	srepo_assert(node);
+
+	return lyd_parent(node);
 }
 
 extern char *
@@ -437,6 +447,20 @@ srepo_dat_release_data(sr_data_t * data)
 
 	sr_release_data(data);
 }
+
+typedef sr_error_t srepo_dat_process_fn(sr_session_ctx_t *,
+                                        const char *,
+                                        const struct lyd_node *,
+                                        void *);
+
+sr_error_t
+srepo_dat_loadn_iter(sr_session_ctx_t *     session,
+                     const char *           xpath,
+                     unsigned int           depth,
+                     sr_get_oper_flag_t     flags,
+                     srepo_dat_process_fn * process,
+                     void *                 data)
+	__srepo_nonull(1, 2, 5) __srepo_export;
 
 /******************************************************************************
  * Debugging / printing / logging YANG data nodes / trees.

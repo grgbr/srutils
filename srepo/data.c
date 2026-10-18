@@ -229,6 +229,25 @@ srepo_dat_vcreatef_leaf(struct lyd_node *  parent,
  * Searching / browsing YANG data nodes / trees.
  ******************************************************************************/
 
+static sr_error_t
+srepo_dat_find_xpath(const struct lyd_node * tree,
+                     const char *            xpath,
+                     struct ly_set **        set)
+{
+	srepo_assert(tree);
+	srepo_assert(srepo_xpath_validate(xpath) > 0);
+	srepo_assert(set);
+
+	LY_ERR ret;
+
+	ret = lyd_find_xpath(tree, xpath, set);
+	srepo_assert(ret != LY_EINVAL);
+	if (ret == LY_EMEM)
+		srepo_abort();
+
+	return srepo_ly_error(ret);
+}
+
 sr_error_t
 srepo_dat_find_node(const struct lyd_node * tree,
                     const char *            path,
@@ -367,6 +386,60 @@ srepo_dat_load_subtree(sr_session_ctx_t * session,
 	srepo_assert((*data)->tree);
 
 	return SR_ERR_OK;
+}
+
+sr_error_t
+srepo_dat_loadn_iter(sr_session_ctx_t *     session,
+                     const char *           xpath,
+                     unsigned int           depth,
+                     sr_get_oper_flag_t     flags,
+                     srepo_dat_process_fn * process,
+                     void *                 data)
+{
+	sr_error_t        serr;
+	sr_data_t *       dat;
+	struct lyd_node * tree;
+	bool              found = false;
+
+	serr = srepo_dat_load_data(session, xpath, depth, flags, &dat);
+	if (serr != SR_ERR_OK)
+		return serr;
+
+	srepo_dat_foreach_data_tree(dat, tree) {
+		struct ly_set * set;
+
+		serr = srepo_dat_find_xpath(tree, xpath, &set);
+		if (serr == SR_ERR_OK) {
+			unsigned int n;
+
+			if (set->count)
+				found = true;
+
+			for (n = 0; n < set->count; n++) {
+				const struct lyd_node * node;
+
+				node = set->dnodes[n];
+				serr = process(session, xpath, node, data);
+				if (serr != SR_ERR_OK) {
+					ly_set_free(set, NULL);
+					goto release;
+				}
+			}
+
+			ly_set_free(set, NULL);
+		}
+		else if (serr != SR_ERR_NOT_FOUND)
+			goto release;
+	}
+
+	srepo_dat_release_data(dat);
+
+	return found ? SR_ERR_OK : SR_ERR_NOT_FOUND;
+
+release:
+	srepo_dat_release_data(dat);
+
+	return serr;
 }
 
 /******************************************************************************

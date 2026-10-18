@@ -8,7 +8,20 @@
  * Libyang (compiled) schema node handling.
  ******************************************************************************/
 
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __returns_nonull __warn_result
+const char *
+srepo_sch_node_name(const struct lysc_node * node)
+{
+	srepo_assert(node);
+
+	const char * name = node->name;
+
+	srepo_assert(srepo_xpath_validate_node(name) > 0);
+
+	return name;
+}
+
+static inline __srepo_nonull(1) __warn_result
 uint16_t
 srepo_sch_node_type(const struct lysc_node * node)
 {
@@ -17,14 +30,14 @@ srepo_sch_node_type(const struct lysc_node * node)
 	return node->nodetype;
 }
 
-static inline __returns_nonull
+static inline __returns_nonull __warn_result
 const char *
 srepo_sch_node_type_str(uint16_t nodetype)
 {
 	return lys_nodetype2str(nodetype);
 }
 
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __warn_result
 uint16_t
 srepo_sch_conf_flags(const struct lysc_node * node)
 {
@@ -33,7 +46,7 @@ srepo_sch_conf_flags(const struct lysc_node * node)
 	return node->flags & LYS_CONFIG_MASK;
 }
 
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __warn_result
 uint16_t
 srepo_sch_status_flags(const struct lysc_node * node)
 {
@@ -42,7 +55,7 @@ srepo_sch_status_flags(const struct lysc_node * node)
 	return node->flags & LYS_STATUS_MASK;
 }
 
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __warn_result
 bool
 srepo_sch_is_mandatory(const struct lysc_node * node)
 {
@@ -51,7 +64,7 @@ srepo_sch_is_mandatory(const struct lysc_node * node)
 	return node->flags & LYS_MAND_TRUE;
 }
 
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __warn_result
 bool
 srepo_sch_is_key(const struct lysc_node * node)
 {
@@ -60,18 +73,18 @@ srepo_sch_is_key(const struct lysc_node * node)
 	return lysc_is_key(node);
 }
 
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __warn_result
 const struct lysc_node *
-srepo_sch_parent(const struct lysc_node * node)
+srepo_sch_node_parent(const struct lysc_node * node)
 {
 	srepo_assert(node);
 
 	return lysc_data_parent(node);
 }
 
-static inline __srepo_nonull(1)
+static inline __srepo_nonull(1) __warn_result
 const struct lysc_node *
-srepo_sch_child(const struct lysc_node * node)
+srepo_sch_node_child(const struct lysc_node * node)
 {
 	srepo_assert(node);
 
@@ -88,7 +101,7 @@ srepo_sch_node_path(const struct lysc_node * node)
 
 /* Iterate over each (compiled) schema node child. */
 #define srepo_sch_foreach_child(_node, _child) \
-	LY_LIST_FOR(srepo_sch_child(_node), _child)
+	LY_LIST_FOR(srepo_sch_node_child(_node), _child)
 
 typedef int srepo_sch_visit_fn(const struct lysc_node *,
                                enum srepo_walk_event,
