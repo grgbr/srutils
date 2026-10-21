@@ -3,6 +3,8 @@
 
 #include <srutils/priv/config.h>
 #include <srutils/srepo/common.h>
+#include <utils/poll.h>
+#include <utils/timer.h>
 #include <stdbool.h>
 
 #define __srplug_export __export_public
@@ -27,6 +29,27 @@
 #endif /* defined(CONFIG_SRPLUG_ASSERT) */
 
 #if defined(CONFIG_SRPLUG_DEBUG)
+
+struct srplug_feat {
+	const char * const name;
+	bool               on;
+};
+
+#define SRPLUG_FEAT_SETUP(_name) \
+	{ \
+		.name   = _name, \
+		.on     = false \
+	}
+
+extern sr_error_t
+srplug_probe_feature(const struct ly_ctx * context,
+                     const char *          module,
+                     struct srplug_feat *  feature)
+	__srplug_nonull(1, 2, 3) __srplug_export;
+
+const struct lys_module *
+srplug_find_module(const struct ly_ctx * context, const char * module)
+	__srplug_nonull(1, 2) __srplug_export;
 
 extern sr_error_t
 srplug_change_debug(const sr_session_ctx_t * session,
@@ -99,6 +122,37 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
                              void *                             data)
 	__srplug_nonull(1, 2, 3) __srplug_export;
 
+
+struct srplug_agent {
+	sr_session_ctx_t *      sess;
+	struct upoll_worker     work;
+	sr_subscription_ctx_t * ctx;
+	struct etux_timer       tmr;
+	unsigned int            cnt;
+};
+
+#define srplug_agent_assert(_agent) \
+	srplug_assert(_agent); \
+	srplug_assert((_agent)->sess)
+
+static inline __srplug_nonull(1) __returns_nonull
+sr_session_ctx_t *
+srplug_agent_session(const struct srplug_agent * agent)
+{
+	srplug_agent_assert(agent);
+
+	return agent->sess;
+}
+
+static inline __srplug_nonull(1) __returns_nonull
+struct upoll_worker *
+srplug_agent_worker(const struct srplug_agent * agent)
+{
+	srplug_agent_assert(agent);
+
+	return (struct upoll_worker *)&agent->work;
+}
+
 struct srplug_change_sub {
 	const char *               module;
 	const char *               xpath;
@@ -108,6 +162,34 @@ struct srplug_change_sub {
 	uint32_t                   options;
 };
 
+#define srplug_assert_change_sub(_sub) \
+	srplug_assert(_sub); \
+	srplug_assert((_sub)->module); \
+	srplug_assert((_sub)->module[0]); \
+	srplug_assert((_sub)->on_change); \
+	srplug_assert(!((_sub)->options & \
+	                (SR_SUBSCR_NO_THREAD | SR_SUBSCR_THREAD_SUSPEND)))
+
+#define SRPLUG_CHANGE_SUB(_mod, _xpath, _feat, _on_change, _prio, _opts) \
+	{ \
+		.kind   = SRPLUG_CHANGE_SUB_KIND, \
+		.change = { \
+			.module    = _mod, \
+			.xpath     = _xpath, \
+			.feature   = _feat, \
+			.on_change = _on_change, \
+			.priority  = _prio, \
+			.options   = _opts \
+		} \
+	}
+
+extern int
+srplug_agent_change_subscribe(struct srplug_agent *            agent,
+                              const struct srplug_change_sub * subscription,
+                              void *                           data,
+                              const struct upoll *             poller)
+	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
+
 struct srplug_oper_sub {
 	const char *               module;
 	const char *               xpath;
@@ -116,6 +198,33 @@ struct srplug_oper_sub {
 	uint32_t                   options;
 };
 
+#define srplug_assert_oper_sub(_sub) \
+	srplug_assert(_sub); \
+	srplug_assert((_sub)->module); \
+	srplug_assert((_sub)->module[0]); \
+	srplug_assert((_sub)->on_get); \
+	srplug_assert(!((_sub)->options & \
+	                (SR_SUBSCR_NO_THREAD | SR_SUBSCR_THREAD_SUSPEND)))
+
+#define SRPLUG_OPER_SUB(_mod, _xpath, _feat, _on_get, _prio, _opts) \
+	{ \
+		.kind = SRPLUG_OPER_SUB_KIND, \
+		.oper = { \
+			.module  = _mod, \
+			.xpath   = _xpath, \
+			.feature = _feat, \
+			.on_get  = _on_get, \
+			.options = _opts \
+		} \
+	}
+
+extern int
+srplug_agent_oper_subscribe(struct srplug_agent *          agent,
+                            const struct srplug_oper_sub * subscription,
+                            void *                         data,
+                            const struct upoll *           poller)
+	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
+
 struct srplug_rpc_sub {
 	const char *               xpath;
 	const struct srplug_feat * feature;
@@ -123,6 +232,33 @@ struct srplug_rpc_sub {
 	uint32_t                   priority;
 	uint32_t                   options;
 };
+
+#define srplug_assert_rpc_sub(_sub) \
+	srplug_assert(_sub); \
+	srplug_assert((_sub)->xpath); \
+	srplug_assert((_sub)->xpath[0]); \
+	srplug_assert((_sub)->on_rpc); \
+	srplug_assert(!((_sub)->options & \
+	                (SR_SUBSCR_NO_THREAD | SR_SUBSCR_THREAD_SUSPEND)))
+
+#define SRPLUG_RPC_SUB(_mod, _xpath, _feat, _on_change, _prio, _opts) \
+	{ \
+		.kind = SRPLUG_RPC_SUB_KIND, \
+		.rpc  = { \
+			.xpath    = _xpath, \
+			.feature  = _feat, \
+			.on_rpc   = _on_rpc, \
+			.priority = _prio, \
+			.options  = _opts \
+		} \
+	}
+
+extern int
+srplug_agent_rpc_subscribe(struct srplug_agent *         agent,
+                           const struct srplug_rpc_sub * subscription,
+                           void *                        data,
+                           const struct upoll *          poller)
+	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
 
 enum srplug_sub_kind {
 	SRPLUG_CHANGE_SUB_KIND = 0,
@@ -140,62 +276,27 @@ struct srplug_sub {
 	};
 };
 
-#define SRPLUG_CHANGE_SUB(_mod, _xpath, _feat, _on_change, _prio, _opts) \
-	{ \
-		.kind   = SRPLUG_CHANGE_SUB_KIND, \
-		.change = { \
-			.module    = _mod, \
-			.xpath     = _xpath, \
-			.feature   = _feat, \
-			.on_change = _on_change, \
-			.priority  = _prio, \
-			.options   = _opts \
-		} \
-	}
+extern int
+srplug_agent_subscribe(struct srplug_agent *     agent,
+                       const struct srplug_sub * subscription,
+                       void *                    data,
+                       const struct upoll *      poller)
+	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
 
-#define SRPLUG_OPER_SUB(_mod, _xpath, _feat, _on_get, _prio, _opts) \
-	{ \
-		.kind = SRPLUG_OPER_SUB_KIND, \
-		.oper = { \
-			.module  = _mod, \
-			.xpath   = _xpath, \
-			.feature = _feat, \
-			.on_get  = _on_get, \
-			.options = _opts \
-		} \
-	}
+extern int
+srplug_agent_subscribe_all(struct srplug_agent *     agent,
+                           const struct srplug_sub * subscriptions,
+                           unsigned int              nr,
+                           void *                    data,
+                           const struct upoll *      poller)
+	__srplug_nonull(1, 2, 5) __warn_result __srplug_export;
 
-#define SRPLUG_RPC_SUB(_mod, _xpath, _feat, _on_change, _prio, _opts) \
-	{ \
-		.kind = SRPLUG_RPC_SUB_KIND, \
-		.rpc  = { \
-			.xpath    = _xpath, \
-			.feature  = _feat, \
-			.on_rpc   = _on_rpc, \
-			.priority = _prio, \
-			.options  = _opts \
-		} \
-	}
+extern int
+srplug_agent_open(struct srplug_agent * agent)
+	__srplug_nonull(1) __warn_result __srplug_export;
 
-struct srplug_feat {
-	const char * const name;
-	bool               on;
-};
-
-#define SRPLUG_FEAT_SETUP(_name) \
-	{ \
-		.name   = _name, \
-		.on     = false \
-	}
-
-extern sr_error_t
-srplug_probe_feature(const struct ly_ctx * context,
-                     const char *          module,
-                     struct srplug_feat *  feature)
-	__srplug_nonull(1, 2, 3) __srplug_export;
-
-const struct lys_module *
-srplug_find_module(const struct ly_ctx * context, const char * module)
+extern void
+srplug_agent_close(struct srplug_agent * agent, const struct upoll *  poller)
 	__srplug_nonull(1, 2) __srplug_export;
 
 #endif /* _SRPLUG_COMMON_H */

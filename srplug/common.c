@@ -2,17 +2,68 @@
 #include "srutils/srepo/data.h"
 #include "srutils/srepo/schema.h"
 
-#if defined(CONFIG_SRPLUG_DAEMON)
-#include "srutils/srplug/daemon.h"
-#elif defined(CONFIG_SRPLUG_THREAD)
-#include "srutils/srplug/thread.h"
-#else
-#error Invalid build configuration: no implementation found !
-#endif
+sr_error_t
+srplug_probe_feature(const struct ly_ctx * context,
+                     const char *          module,
+                     struct srplug_feat *  feature)
+{
+	srplug_assert(context);
+	srplug_assert(module);
+	srplug_assert(module[0]);
+	srplug_assert(feature);
+	srplug_assert(feature->name);
+	srplug_assert(feature->name[0]);
 
-/******************************************************************************
- * Sysrepo data changes handling.
- ******************************************************************************/
+	const struct lys_module * mod;
+	LY_ERR                    ret;
+
+	mod = srepo_sch_find_module(context, module);
+	if (!mod) {
+		srplug_warn("'%s' module: not found", mod->name);
+		return SR_ERR_NOT_FOUND;
+	}
+
+	ret = lys_feature_value(mod, feature->name);
+	switch (ret) {
+	case LY_SUCCESS:
+		feature->on = true;
+		return SR_ERR_OK;
+
+	case LY_ENOT:
+		feature->on = false;
+		return SR_ERR_OK;
+
+	case LY_ENOTFOUND:
+		break;
+
+	default:
+		srplug_assert(0);
+	}
+
+	srplug_warn("'%s' module: '%s' feature: not found",
+	            mod->name,
+	            feature->name);
+
+	return SR_ERR_NOT_FOUND;
+}
+
+const struct lys_module *
+srplug_find_module(const struct ly_ctx * context, const char * module)
+{
+	srplug_assert(context);
+	srplug_assert(module);
+	srplug_assert(module[0]);
+
+	const struct lys_module * mod;
+
+	mod = srepo_sch_find_module(context, module);
+	if (mod)
+		return mod;
+
+	srplug_warn("'%s' module: not found", module);
+
+	return NULL;
+}
 
 #if defined(CONFIG_SRPLUG_DEBUG)
 
@@ -210,65 +261,558 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
 	return ret;
 }
 
-sr_error_t
-srplug_probe_feature(const struct ly_ctx * context,
-                     const char *          module,
-                     struct srplug_feat *  feature)
+static int
+srplug_register_change_sub(sr_subscription_ctx_t **         subscriptions,
+                           sr_session_ctx_t *               session,
+                           const struct srplug_change_sub * subscription,
+                           void *                           data)
 {
-	srplug_assert(context);
-	srplug_assert(module);
-	srplug_assert(module[0]);
-	srplug_assert(feature);
-	srplug_assert(feature->name);
-	srplug_assert(feature->name[0]);
+	if (!subscription->feature || subscription->feature->on) {
+		sr_error_t err;
 
-	const struct lys_module * mod;
-	LY_ERR                    ret;
+		err = sr_module_change_subscribe(
+			session,
+			subscription->module,
+			subscription->xpath,
+			subscription->on_change,
+			data,
+			subscription->priority,
+			subscription->options | SR_SUBSCR_NO_THREAD,
+			subscriptions);
+		if (err == SR_ERR_OK) {
+			srplug_sess_debug(
+				session,
+				"'%s%s': configuration data handler registered",
+				subscription->xpath ? "" : "/",
+				subscription->xpath ? subscription->xpath
+				                    : subscription->module);
+			return 0;
+		}
 
-	mod = srepo_sch_find_module(context, module);
-	if (!mod) {
-		srplug_warn("'%s' module: not found", mod->name);
-		return SR_ERR_NOT_FOUND;
+		if (err == SR_ERR_NO_MEMORY)
+			srepo_abort();
+
+		srplug_sess_info(
+			session,
+			"'%s%s': cannot register configuration data handler: %s",
+			subscription->xpath ? "" : "/",
+			subscription->xpath ? subscription->xpath
+			                    : subscription->module,
+			srepo_errstr(err));
+
+		return -EPERM;
+	}
+	else
+		return 0;
+}
+
+static int
+srplug_register_oper_sub(sr_subscription_ctx_t **       subscriptions,
+                         sr_session_ctx_t *             session,
+                         const struct srplug_oper_sub * subscription,
+                         void *                         data)
+{
+	if (!subscription->feature || subscription->feature->on) {
+		int err;
+
+		err = sr_oper_get_subscribe(
+			session,
+			subscription->module,
+			subscription->xpath,
+			subscription->on_get,
+			data,
+			subscription->options | SR_SUBSCR_NO_THREAD,
+			subscriptions);
+		if (err == SR_ERR_OK) {
+			srplug_sess_debug(
+				session,
+				"'%s%s': operational data handler registered",
+				subscription->xpath ? "" : "/",
+				subscription->xpath ? subscription->xpath
+				                    : subscription->module);
+			return 0;
+		}
+
+
+		if (err == SR_ERR_NO_MEMORY)
+			srepo_abort();
+
+		srplug_sess_info(
+			session,
+			"'%s%s': cannot register operational data handler: %s",
+			subscription->xpath ? "" : "/",
+			subscription->xpath ? subscription->xpath
+			                    : subscription->module,
+			srepo_errstr(err));
+
+		return -EPERM;
+	}
+	else
+		return 0;
+}
+
+static int
+srplug_register_rpc_sub(sr_subscription_ctx_t **      subscriptions,
+                        sr_session_ctx_t *            session,
+                        const struct srplug_rpc_sub * subscription,
+                        void *                        data)
+{
+	if (!subscription->feature || subscription->feature->on) {
+		int err;
+
+		err = sr_rpc_subscribe(
+			session,
+			subscription->xpath,
+			subscription->on_rpc,
+			data,
+			subscription->priority,
+			subscription->options | SR_SUBSCR_NO_THREAD,
+			subscriptions);
+		if (err == SR_ERR_OK) {
+			srplug_sess_debug(
+				session,
+				"'%s': RPC / action handler registered",
+				subscription->xpath ? subscription->xpath : "");
+			return 0;
+		}
+
+		if (err == SR_ERR_NO_MEMORY)
+			srepo_abort();
+
+		srplug_sess_info(
+			session,
+			"'%s': cannot register RPC / action handler: %s",
+			subscription->xpath ? subscription->xpath : "",
+			srepo_errstr(err));
+
+		return -EPERM;
+	}
+	else
+		return 0;
+}
+
+static void
+srplug_adjust_tmr(struct etux_timer * timer, const struct timespec * tmout)
+{
+	if (tmout->tv_sec || tmout->tv_nsec) {
+		struct timespec tm;
+
+		/* Compute requested timeout absolute time. */
+		utime_monotonic_now(&tm);
+		utime_tspec_add_clamp(&tm, tmout);
+
+		/*
+		 * And arm the timer if necessary, i.e., if it is not armed or
+		 * if its expiry date is later than the requested one.
+		 */
+		if (!etux_timer_is_armed(timer) ||
+		    utime_tspec_after(etux_timer_expiry_tspec(timer), &tm))
+			etux_timer_arm_tspec(timer, &tm);
+	}
+	else
+		etux_timer_cancel(timer);
+}
+
+static
+void
+srplug_process_subs(sr_subscription_ctx_t * subscriptions,
+                    sr_session_ctx_t *      session,
+                    struct etux_timer *     timer)
+{
+	struct timespec tmout;
+	int             err;
+
+	/*
+	 * No need to initialize `tmout' since sr_subscription_process_events()
+	 * will zero it out.
+	 */
+	err = sr_subscription_process_events(subscriptions, session, &tmout);
+	switch (err) {
+	case SR_ERR_OK:
+		break;
+
+	case SR_ERR_TIME_OUT:
+		/*
+		 * Reschedule a call to sr_subscription_process_events() no
+		 * later than 100 milliseconds in the future.
+		 */
+		tmout.tv_sec = 0;
+		tmout.tv_nsec = 100000000;
+		break;
+
+	case SR_ERR_NO_MEMORY: /* Not enough memory. */
+		srepo_abort();
+
+	default:
+		srplug_err("failed to process subscription events: %s",
+		           srepo_errstr(err));
+		return;
 	}
 
-	ret = lys_feature_value(mod, feature->name);
-	switch (ret) {
-	case LY_SUCCESS:
-		feature->on = true;
-		return SR_ERR_OK;
+	/* Adjust timer configuration. */
+	srplug_adjust_tmr(timer, &tmout);
+}
 
-	case LY_ENOT:
-		feature->on = false;
-		return SR_ERR_OK;
+static void
+srplug_clear_subs(sr_subscription_ctx_t *  subscriptions,
+                  const sr_session_ctx_t * session __unused)
+{
+	sr_error_t err;
 
-	case LY_ENOTFOUND:
-		break;
+	/*
+	 * Free all subscribtions (worker->ctx may be NULL here).
+	 *
+	 * Warning:
+	 * Although all sysrepo code samples don't check the code returned by
+	 * calls to sr_unsubscribe(), there might be an error here (because of
+	 * locking timeouts and other things).
+	 * What should we do here ? Can this really happen ?
+	 * (Do not forget our use case is single threaded and relies upon an
+	 * asynchronous event poller logic).
+	 */
+	err = sr_unsubscribe(subscriptions);
+	if (err != SR_ERR_OK) {
+		if (err == SR_ERR_NO_MEMORY)
+			srepo_abort();
+
+		srplug_sess_warn(session,
+		                 "cannot clear subscriptions: %s",
+		                 srepo_errstr(err));
+	}
+}
+
+static
+void
+srplug_agent_expire_subs(struct etux_timer * timer)
+{
+	const struct srplug_agent * agent;
+
+	agent = containerof(timer, struct srplug_agent, tmr);
+	srplug_agent_assert(agent);
+
+	srplug_process_subs(agent->ctx, agent->sess, timer);
+}
+
+static
+int
+srplug_agent_dispatch_subs(struct upoll_worker * worker,
+                           uint32_t              state __unused,
+                           const struct upoll *  poller __unused)
+{
+	struct srplug_agent * agent;
+
+	agent = containerof(worker, struct srplug_agent, work);
+	srplug_agent_assert(agent);
+
+	srplug_process_subs(agent->ctx, agent->sess, &agent->tmr);
+
+	return 0;
+}
+
+static int
+srplug_agent_enable_subs(struct srplug_agent * agent,
+                         const struct upoll *  poller)
+{
+	int err;
+
+	if (!agent->cnt) {
+		srplug_assert(agent->ctx);
+		srplug_assert(!etux_timer_is_armed(&agent->tmr));
+
+		int fd;
+
+		err = sr_get_event_pipe(agent->ctx, &fd);
+		srplug_assert(err == SR_ERR_OK);
+		srplug_assert(fd >= 0);
+
+		err = upoll_register_dispatch(poller,
+		                              fd,
+		                              EPOLLIN,
+		                              &agent->work,
+		                              srplug_agent_dispatch_subs);
+		if (err) {
+			if (err == -ENOMEM)
+				srepo_abort();
+
+			srplug_clear_subs(agent->ctx, agent->sess);
+			agent->ctx = NULL;
+
+			srplug_err("cannot enable subscription worker: %s",
+			           strerror(-err));
+
+			return err;
+		}
+
+		srplug_sess_debug(agent->sess, "subscription worker enabled");
+	}
+
+	agent->cnt++;
+
+	return 0;
+}
+
+static void
+srplug_agent_disable_subs(struct srplug_agent * agent,
+                          const struct upoll *  poller)
+{
+	if (agent->cnt) {
+		srplug_assert(agent->work.dispatch);
+		srplug_assert(agent->ctx);
+
+		int fd;
+		int err __unused;
+
+		etux_timer_cancel(&agent->tmr);
+
+		err = sr_get_event_pipe(agent->ctx, &fd);
+		srplug_assert(err == SR_ERR_OK);
+		srplug_assert(fd >= 0);
+
+		/* Unregister from asynchronous poller. */
+		upoll_unregister(poller, fd);
+
+		agent->cnt = 0;
+
+		srplug_sess_debug(agent->sess, "subscription worker disabled");
+	}
+}
+
+int
+srplug_agent_change_subscribe(struct srplug_agent *            agent,
+                              const struct srplug_change_sub * subscription,
+                              void *                           data,
+                              const struct upoll *             poller)
+{
+	srplug_agent_assert(agent);
+	srplug_assert_change_sub(subscription);
+	srplug_assert(poller);
+
+	int err;
+
+	/* Register the configuration data subscription handler. */
+	err = srplug_register_change_sub(&agent->ctx,
+	                                 agent->sess,
+	                                 subscription,
+	                                 data);
+	if (err)
+		return err;
+
+	/* Enable asynchronous processing of subscriptions. */
+	return srplug_agent_enable_subs(agent, poller);
+}
+
+int
+srplug_agent_oper_subscribe(struct srplug_agent *          agent,
+                            const struct srplug_oper_sub * subscription,
+                            void *                         data,
+                            const struct upoll *           poller)
+{
+	srplug_agent_assert(agent);
+	srplug_assert_oper_sub(subscription);
+	srplug_assert(poller);
+
+	int err;
+
+	/* Register the operational data subscription handler. */
+	err = srplug_register_oper_sub(&agent->ctx,
+	                               agent->sess,
+	                               subscription,
+	                               data);
+	if (err)
+		return err;
+
+	/* Enable asynchronous processing of subscriptions. */
+	return srplug_agent_enable_subs(agent, poller);
+}
+
+int
+srplug_agent_rpc_subscribe(struct srplug_agent *         agent,
+                           const struct srplug_rpc_sub * subscription,
+                           void *                        data,
+                           const struct upoll *          poller)
+{
+	srplug_agent_assert(agent);
+	srplug_assert_rpc_sub(subscription);
+	srplug_assert(poller);
+
+	int err;
+
+	/* Register the RPC subscription handler. */
+	err = srplug_register_rpc_sub(&agent->ctx,
+	                              agent->sess,
+	                              subscription,
+	                              data);
+	if (err)
+		return err;
+
+	/* Enable asynchronous processing of subscriptions. */
+	return srplug_agent_enable_subs(agent, poller);
+}
+
+int
+srplug_agent_subscribe(struct srplug_agent *     agent,
+                       const struct srplug_sub * subscription,
+                       void *                    data,
+                       const struct upoll *      poller)
+{
+	srplug_agent_assert(agent);
+	srplug_assert(subscription);
+	srplug_assert(subscription->kind >= 0);
+	srplug_assert(subscription->kind < SRPLUG_SUB_KIND_NR);
+	srplug_assert(poller);
+
+	switch (subscription->kind) {
+	case SRPLUG_CHANGE_SUB_KIND:
+		return srplug_agent_change_subscribe(agent,
+		                                     &subscription->change,
+		                                     data,
+		                                     poller);
+
+	case SRPLUG_OPER_SUB_KIND:
+		return srplug_agent_oper_subscribe(agent,
+		                                   &subscription->oper,
+		                                   data,
+		                                   poller);
+
+	case SRPLUG_RPC_SUB_KIND:
+		return srplug_agent_rpc_subscribe(agent,
+		                                  &subscription->rpc,
+		                                  data,
+		                                  poller);
 
 	default:
 		srplug_assert(0);
+		return -ENOTSUP;
 	}
-
-	srplug_warn("'%s' module: '%s' feature: not found",
-	            mod->name,
-	            feature->name);
-
-	return SR_ERR_NOT_FOUND;
 }
 
-const struct lys_module *
-srplug_find_module(const struct ly_ctx * context, const char * module)
+int
+srplug_agent_subscribe_all(struct srplug_agent *      agent,
+                            const struct srplug_sub * subscriptions,
+                            unsigned int              nr,
+                            void *                    data,
+                            const struct upoll *      poller)
 {
-	srplug_assert(context);
-	srplug_assert(module);
-	srplug_assert(module[0]);
+	srplug_agent_assert(agent);
+	srplug_assert(subscriptions);
+	srplug_assert(nr);
+	srplug_assert(poller);
 
-	const struct lys_module * mod;
+	unsigned int             s;
+	sr_subscription_ctx_t ** ctx = &agent->ctx;
+	sr_session_ctx_t *       sess = agent->sess;
 
-	mod = srepo_sch_find_module(context, module);
-	if (mod)
-		return mod;
+	for (s = 0; s < nr; s++) {
+		srplug_assert(subscriptions[s].kind >= 0);
+		srplug_assert(subscriptions[s].kind < SRPLUG_SUB_KIND_NR);
 
-	srplug_warn("'%s' module: not found", module);
+		const struct srplug_sub * sub = &subscriptions[s];
+		int                       err;
 
-	return NULL;
+		switch (sub->kind) {
+		case SRPLUG_CHANGE_SUB_KIND:
+			err = srplug_register_change_sub(ctx,
+			                                 sess,
+			                                 &sub->change,
+			                                 data);
+			break;
+
+		case SRPLUG_OPER_SUB_KIND:
+			err = srplug_register_oper_sub(ctx,
+			                               sess,
+			                               &sub->oper,
+			                               data);
+			break;
+
+		case SRPLUG_RPC_SUB_KIND:
+			err = srplug_register_rpc_sub(ctx,
+			                              sess,
+			                              &sub->rpc,
+			                              data);
+			break;
+
+		default:
+			srplug_assert(0);
+			err = -ENOTSUP;
+		}
+
+		if (err)
+			return err;
+	}
+
+	/* Enable asynchronous processing of subscriptions. */
+	return srplug_agent_enable_subs(agent, poller);
+}
+
+int
+srplug_agent_open(struct srplug_agent * agent)
+{
+	srplug_assert(agent);
+
+	sr_error_t         err;
+	sr_conn_ctx_t *    conn = NULL;
+	sr_session_ctx_t * sess = NULL;
+
+	/* Connect to sysrepo */
+	err = sr_connect(SR_CONN_DEFAULT, &conn);
+	if (err != SR_ERR_OK) {
+		srplug_err("cannot connect to datastore: %s",
+		           srepo_errstr(err));
+		return -EPERM;
+	}
+
+	err = sr_session_start(conn, SR_DS_RUNNING, &sess);
+	if (err) {
+		srplug_err("cannot start datastore session: %s",
+		           srepo_errstr(err));
+		goto disconnect;
+	}
+
+	agent->sess = sess;
+	agent->ctx = NULL;
+	etux_timer_init(&agent->tmr, srplug_agent_expire_subs);
+	agent->cnt = 0;
+
+	srplug_sess_debug(agent->sess, "sysrepo agent opened");
+
+	return 0;
+
+disconnect:
+	/* Also closes all sessions related to this connection. */
+	sr_disconnect(conn);
+
+	return -EPERM;
+}
+
+void
+srplug_agent_close(struct srplug_agent * agent, const struct upoll *  poller)
+{
+	srplug_agent_assert(agent);
+
+	sr_conn_ctx_t * conn = sr_session_get_connection(agent->sess);
+
+	srplug_sess_debug(agent->sess, "closing sysrepo agent..");
+
+	/* Stop asynchronous processing of subscriptions. */
+	srplug_agent_disable_subs(agent, poller);
+
+#if 0
+	/*
+	 * Release all subscriptions.
+	 * Keep this code for reference purpose only since all subscriptions are
+	 * free'd at sr_disconnect() time.
+	 */
+	srplug_assert(!etux_timer_is_armed(&agent->tmr));
+	srplug_clear_subs(agent->ctx, agent->sess);
+
+	/*
+	 * Close Sysrepo datastore session.
+	 * Keep this code for reference purpose only since all sessions are
+	 * free'd at sr_disconnect() time.
+	 */
+	sr_session_stop(agent->sess);
+#endif
+
+	/* Close all sessions and connection to Sysrepo datastores. */
+	sr_disconnect(conn);
 }

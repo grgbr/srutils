@@ -6,10 +6,7 @@
 #endif /* defined(_SRPLUG_THREAD_H) */
 
 #include <srutils/srplug/common.h>
-#include <utils/poll.h>
-#include <utils/timer.h>
 #include <elog/elog.h>
-#include <sysrepo.h>
 
 /******************************************************************************
  * Command line parsing.
@@ -115,18 +112,14 @@ struct srplug_sigs_work {
 };
 
 struct srplug_daemon {
-	sr_session_ctx_t *      sess;
+	struct srplug_agent     base;
 	struct upoll            poll;
-	struct upoll_worker     sub_work;
-	sr_subscription_ctx_t * sub_ctx;
-	struct etux_timer       sub_tmr;
-	unsigned int            sub_cnt;
 	struct srplug_sigs_work sigs;
 };
 
 #define srplug_daemon_assert(_daemon) \
 	srplug_assert(_daemon); \
-	srplug_assert((_daemon)->sess)
+	srplug_agent_assert(&(_daemon)->base)
 
 static inline __srplug_nonull(1) __returns_nonull
 sr_session_ctx_t *
@@ -134,7 +127,7 @@ srplug_daemon_session(const struct srplug_daemon * daemon)
 {
 	srplug_daemon_assert(daemon);
 
-	return daemon->sess;
+	return srplug_agent_session(&daemon->base);
 }
 
 static inline __srplug_nonull(1) __returns_nonull
@@ -146,36 +139,77 @@ srplug_daemon_poller(const struct srplug_daemon * daemon)
 	return (const struct upoll *)&daemon->poll;
 }
 
-extern int
+static inline __srplug_nonull(1, 2) __warn_result
+int
 srplug_daemon_change_subscribe(struct srplug_daemon *           daemon,
                                const struct srplug_change_sub * subscription,
                                void *                           data)
-	__srplug_nonull(1, 2) __warn_result __srplug_export;
+{
+	srplug_daemon_assert(daemon);
 
-extern int
+	return srplug_agent_change_subscribe(&daemon->base,
+	                                     subscription,
+	                                     data,
+	                                     &daemon->poll);
+}
+
+static inline __srplug_nonull(1, 2) __warn_result
+int
 srplug_daemon_oper_subscribe(struct srplug_daemon *         daemon,
                              const struct srplug_oper_sub * subscription,
                              void *                         data)
-	__srplug_nonull(1, 2) __warn_result __srplug_export;
+{
+	srplug_daemon_assert(daemon);
 
-extern int
+	return srplug_agent_oper_subscribe(&daemon->base,
+	                                   subscription,
+	                                   data,
+	                                   &daemon->poll);
+}
+
+static inline __srplug_nonull(1, 2) __warn_result
+int
 srplug_daemon_rpc_subscribe(struct srplug_daemon *        daemon,
                             const struct srplug_rpc_sub * subscription,
                             void *                        data)
-	__srplug_nonull(1, 2) __warn_result __srplug_export;
+{
+	srplug_daemon_assert(daemon);
 
-extern int
+	return srplug_agent_rpc_subscribe(&daemon->base,
+	                                  subscription,
+	                                  data,
+	                                  &daemon->poll);
+}
+
+static inline __srplug_nonull(1, 2) __warn_result
+int
 srplug_daemon_subscribe(struct srplug_daemon *    daemon,
                         const struct srplug_sub * subscription,
                         void *                    data)
-	__srplug_nonull(1, 2) __warn_result __srplug_export;
+{
+	srplug_daemon_assert(daemon);
 
-extern int
+	return srplug_agent_subscribe(&daemon->base,
+	                              subscription,
+	                              data,
+	                              &daemon->poll);
+}
+
+static inline __srplug_nonull(1, 2) __warn_result
+int
 srplug_daemon_subscribe_all(struct srplug_daemon *    daemon,
                             const struct srplug_sub * subscriptions,
                             unsigned int              nr,
                             void *                    data)
-	__srplug_nonull(1, 2) __warn_result __srplug_export;
+{
+	srplug_daemon_assert(daemon);
+
+	return srplug_agent_subscribe_all(&daemon->base,
+	                                  subscriptions,
+	                                  nr,
+	                                  data,
+	                                  &daemon->poll);
+}
 
 extern int
 srplug_daemon_poll(const struct srplug_daemon * daemon)
