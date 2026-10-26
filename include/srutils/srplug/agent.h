@@ -99,7 +99,7 @@ srplug_agent_subscribe_all(struct srplug_agent *     agent,
                            void *                    data)
 {
 	srplug_agent_assert(agent);
-	srplug_assert(subscription);
+	srplug_assert(subscriptions);
 	srplug_assert(nr);
 
 	return srplug_object_subscribe_all(&agent->base,
@@ -127,7 +127,7 @@ srplug_agent_open(struct srplug_agent * agent, const struct upoll * poller)
 	return 0;
 }
 
-static inline __srplug_nonull(1) __warn_result
+static inline __srplug_nonull(1)
 void
 srplug_agent_close(struct srplug_agent * agent)
 {
