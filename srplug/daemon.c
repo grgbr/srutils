@@ -1080,19 +1080,19 @@ srplug_daemon_open(struct srplug_daemon * daemon, unsigned int poll_nr)
 		return err;
 	}
 
-	err = srplug_agent_open(&daemon->base);
+	err = srplug_object_open(&daemon->base);
 	if (err)
 		goto close_poll;
 
 	err = srplug_sigs_init(&daemon->sigs, &daemon->poll);
 	if (err)
-		goto close_agent;
+		goto close_object;
 
 	return 0;
 
-close_agent:
+close_object:
 	/* Also closes all sessions related to this connection. */
-	srplug_agent_close(&daemon->base, &daemon->poll);
+	srplug_object_close(&daemon->base, &daemon->poll);
 close_poll:
 	upoll_close(&daemon->poll);
 
@@ -1108,7 +1108,7 @@ srplug_daemon_close(struct srplug_daemon * daemon)
 	srplug_sigs_fini(&daemon->sigs, &daemon->poll);
 
 	/* Close asynchronous subscriptions handling. */
-	srplug_agent_close(&daemon->base, &daemon->poll);
+	srplug_object_close(&daemon->base, &daemon->poll);
 
 	/* Close asynchronous event poller. */
 	upoll_close(&daemon->poll);

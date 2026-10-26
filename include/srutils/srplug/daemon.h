@@ -112,14 +112,14 @@ struct srplug_sigs_work {
 };
 
 struct srplug_daemon {
-	struct srplug_agent     base;
+	struct srplug_object    base;
 	struct upoll            poll;
 	struct srplug_sigs_work sigs;
 };
 
 #define srplug_daemon_assert(_daemon) \
 	srplug_assert(_daemon); \
-	srplug_agent_assert(&(_daemon)->base)
+	srplug_object_assert(&(_daemon)->base)
 
 static inline __srplug_nonull(1) __returns_nonull
 sr_session_ctx_t *
@@ -127,7 +127,7 @@ srplug_daemon_session(const struct srplug_daemon * daemon)
 {
 	srplug_daemon_assert(daemon);
 
-	return srplug_agent_session(&daemon->base);
+	return srplug_object_session(&daemon->base);
 }
 
 static inline __srplug_nonull(1) __returns_nonull
@@ -147,10 +147,10 @@ srplug_daemon_change_subscribe(struct srplug_daemon *           daemon,
 {
 	srplug_daemon_assert(daemon);
 
-	return srplug_agent_change_subscribe(&daemon->base,
-	                                     subscription,
-	                                     data,
-	                                     &daemon->poll);
+	return srplug_object_change_subscribe(&daemon->base,
+	                                      subscription,
+	                                      data,
+	                                      &daemon->poll);
 }
 
 static inline __srplug_nonull(1, 2) __warn_result
@@ -161,10 +161,10 @@ srplug_daemon_oper_subscribe(struct srplug_daemon *         daemon,
 {
 	srplug_daemon_assert(daemon);
 
-	return srplug_agent_oper_subscribe(&daemon->base,
-	                                   subscription,
-	                                   data,
-	                                   &daemon->poll);
+	return srplug_object_oper_subscribe(&daemon->base,
+	                                    subscription,
+	                                    data,
+	                                    &daemon->poll);
 }
 
 static inline __srplug_nonull(1, 2) __warn_result
@@ -175,10 +175,10 @@ srplug_daemon_rpc_subscribe(struct srplug_daemon *        daemon,
 {
 	srplug_daemon_assert(daemon);
 
-	return srplug_agent_rpc_subscribe(&daemon->base,
-	                                  subscription,
-	                                  data,
-	                                  &daemon->poll);
+	return srplug_object_rpc_subscribe(&daemon->base,
+	                                   subscription,
+	                                   data,
+	                                   &daemon->poll);
 }
 
 static inline __srplug_nonull(1, 2) __warn_result
@@ -189,10 +189,10 @@ srplug_daemon_subscribe(struct srplug_daemon *    daemon,
 {
 	srplug_daemon_assert(daemon);
 
-	return srplug_agent_subscribe(&daemon->base,
-	                              subscription,
-	                              data,
-	                              &daemon->poll);
+	return srplug_object_subscribe(&daemon->base,
+	                               subscription,
+	                               data,
+	                               &daemon->poll);
 }
 
 static inline __srplug_nonull(1, 2) __warn_result
@@ -204,11 +204,11 @@ srplug_daemon_subscribe_all(struct srplug_daemon *    daemon,
 {
 	srplug_daemon_assert(daemon);
 
-	return srplug_agent_subscribe_all(&daemon->base,
-	                                  subscriptions,
-	                                  nr,
-	                                  data,
-	                                  &daemon->poll);
+	return srplug_object_subscribe_all(&daemon->base,
+	                                   subscriptions,
+	                                   nr,
+	                                   data,
+	                                   &daemon->poll);
 }
 
 extern int

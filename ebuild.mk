@@ -21,6 +21,7 @@ headers     += srutils/srepo/xpath.h srutils/srepo/priv/xpath.h
 headers     += srutils/srepo/data.h srutils/srepo/priv/data.h
 headers     += srutils/srepo/schema.h
 headers     += srutils/srplug/common.h
+headers     += $(call kconf_enabled,SRPLUG_AGENT,srutils/srplug/agent.h)
 headers     += $(call kconf_enabled,SRPLUG_DAEMON,srutils/srplug/daemon.h)
 headers     += $(call kconf_enabled,SRPLUG_THREAD,srutils/srplug/thread.h)
 

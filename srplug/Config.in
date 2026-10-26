@@ -27,8 +27,15 @@ config SRPLUG_DEBUG
 	  cleanup logic suitable for memory error detection tools such as
 	  Valgrind's Memcheck and co.
 
+config SRPLUG_AGENT
+	bool "Agent"
+	default n
+	help
+	  Build srplug with support all purpose plugin logic.
+
 config SRPLUG_DAEMON
 	bool "Daemon"
+	select SRPLUG_AGENT
 	default n
 	help
 	  Build srplug with support daemonized plugin running into their own

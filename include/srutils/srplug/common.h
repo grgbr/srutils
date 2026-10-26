@@ -123,7 +123,7 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
 	__srplug_nonull(1, 2, 3) __srplug_export;
 
 
-struct srplug_agent {
+struct srplug_object {
 	sr_session_ctx_t *      sess;
 	struct upoll_worker     work;
 	sr_subscription_ctx_t * ctx;
@@ -131,26 +131,26 @@ struct srplug_agent {
 	unsigned int            cnt;
 };
 
-#define srplug_agent_assert(_agent) \
-	srplug_assert(_agent); \
-	srplug_assert((_agent)->sess)
+#define srplug_object_assert(_obj) \
+	srplug_assert(_obj); \
+	srplug_assert((_obj)->sess)
 
 static inline __srplug_nonull(1) __returns_nonull
 sr_session_ctx_t *
-srplug_agent_session(const struct srplug_agent * agent)
+srplug_object_session(const struct srplug_object * object)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 
-	return agent->sess;
+	return object->sess;
 }
 
 static inline __srplug_nonull(1) __returns_nonull
 struct upoll_worker *
-srplug_agent_worker(const struct srplug_agent * agent)
+srplug_object_worker(const struct srplug_object * object)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 
-	return (struct upoll_worker *)&agent->work;
+	return (struct upoll_worker *)&object->work;
 }
 
 struct srplug_change_sub {
@@ -184,10 +184,10 @@ struct srplug_change_sub {
 	}
 
 extern int
-srplug_agent_change_subscribe(struct srplug_agent *            agent,
-                              const struct srplug_change_sub * subscription,
-                              void *                           data,
-                              const struct upoll *             poller)
+srplug_object_change_subscribe(struct srplug_object *           object,
+                               const struct srplug_change_sub * subscription,
+                               void *                           data,
+                               const struct upoll *             poller)
 	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
 
 struct srplug_oper_sub {
@@ -219,10 +219,10 @@ struct srplug_oper_sub {
 	}
 
 extern int
-srplug_agent_oper_subscribe(struct srplug_agent *          agent,
-                            const struct srplug_oper_sub * subscription,
-                            void *                         data,
-                            const struct upoll *           poller)
+srplug_object_oper_subscribe(struct srplug_object *         object,
+                             const struct srplug_oper_sub * subscription,
+                             void *                         data,
+                             const struct upoll *           poller)
 	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
 
 struct srplug_rpc_sub {
@@ -254,10 +254,10 @@ struct srplug_rpc_sub {
 	}
 
 extern int
-srplug_agent_rpc_subscribe(struct srplug_agent *         agent,
-                           const struct srplug_rpc_sub * subscription,
-                           void *                        data,
-                           const struct upoll *          poller)
+srplug_object_rpc_subscribe(struct srplug_object *        object,
+                            const struct srplug_rpc_sub * subscription,
+                            void *                        data,
+                            const struct upoll *          poller)
 	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
 
 enum srplug_sub_kind {
@@ -277,26 +277,26 @@ struct srplug_sub {
 };
 
 extern int
-srplug_agent_subscribe(struct srplug_agent *     agent,
-                       const struct srplug_sub * subscription,
-                       void *                    data,
-                       const struct upoll *      poller)
+srplug_object_subscribe(struct srplug_object *    object,
+                        const struct srplug_sub * subscription,
+                        void *                    data,
+                        const struct upoll *      poller)
 	__srplug_nonull(1, 2, 4) __warn_result __srplug_export;
 
 extern int
-srplug_agent_subscribe_all(struct srplug_agent *     agent,
-                           const struct srplug_sub * subscriptions,
-                           unsigned int              nr,
-                           void *                    data,
-                           const struct upoll *      poller)
+srplug_object_subscribe_all(struct srplug_object *    object,
+                            const struct srplug_sub * subscriptions,
+                            unsigned int              nr,
+                            void *                    data,
+                            const struct upoll *      poller)
 	__srplug_nonull(1, 2, 5) __warn_result __srplug_export;
 
 extern int
-srplug_agent_open(struct srplug_agent * agent)
+srplug_object_open(struct srplug_object * object)
 	__srplug_nonull(1) __warn_result __srplug_export;
 
 extern void
-srplug_agent_close(struct srplug_agent * agent, const struct upoll *  poller)
+srplug_object_close(struct srplug_object * object, const struct upoll *  poller)
 	__srplug_nonull(1, 2) __srplug_export;
 
 #endif /* _SRPLUG_COMMON_H */

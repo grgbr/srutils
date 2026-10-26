@@ -483,59 +483,59 @@ srplug_clear_subs(sr_subscription_ctx_t *  subscriptions,
 
 static
 void
-srplug_agent_expire_subs(struct etux_timer * timer)
+srplug_object_expire_subs(struct etux_timer * timer)
 {
-	const struct srplug_agent * agent;
+	const struct srplug_object * object;
 
-	agent = containerof(timer, struct srplug_agent, tmr);
-	srplug_agent_assert(agent);
+	object = containerof(timer, struct srplug_object, tmr);
+	srplug_object_assert(object);
 
-	srplug_process_subs(agent->ctx, agent->sess, timer);
+	srplug_process_subs(object->ctx, object->sess, timer);
 }
 
 static
 int
-srplug_agent_dispatch_subs(struct upoll_worker * worker,
+srplug_object_dispatch_subs(struct upoll_worker * worker,
                            uint32_t              state __unused,
                            const struct upoll *  poller __unused)
 {
-	struct srplug_agent * agent;
+	struct srplug_object * object;
 
-	agent = containerof(worker, struct srplug_agent, work);
-	srplug_agent_assert(agent);
+	object = containerof(worker, struct srplug_object, work);
+	srplug_object_assert(object);
 
-	srplug_process_subs(agent->ctx, agent->sess, &agent->tmr);
+	srplug_process_subs(object->ctx, object->sess, &object->tmr);
 
 	return 0;
 }
 
 static int
-srplug_agent_enable_subs(struct srplug_agent * agent,
-                         const struct upoll *  poller)
+srplug_object_enable_subs(struct srplug_object * object,
+                          const struct upoll *  poller)
 {
 	int err;
 
-	if (!agent->cnt) {
-		srplug_assert(agent->ctx);
-		srplug_assert(!etux_timer_is_armed(&agent->tmr));
+	if (!object->cnt) {
+		srplug_assert(object->ctx);
+		srplug_assert(!etux_timer_is_armed(&object->tmr));
 
 		int fd;
 
-		err = sr_get_event_pipe(agent->ctx, &fd);
+		err = sr_get_event_pipe(object->ctx, &fd);
 		srplug_assert(err == SR_ERR_OK);
 		srplug_assert(fd >= 0);
 
 		err = upoll_register_dispatch(poller,
 		                              fd,
 		                              EPOLLIN,
-		                              &agent->work,
-		                              srplug_agent_dispatch_subs);
+		                              &object->work,
+		                              srplug_object_dispatch_subs);
 		if (err) {
 			if (err == -ENOMEM)
 				srepo_abort();
 
-			srplug_clear_subs(agent->ctx, agent->sess);
-			agent->ctx = NULL;
+			srplug_clear_subs(object->ctx, object->sess);
+			object->ctx = NULL;
 
 			srplug_err("cannot enable subscription worker: %s",
 			           strerror(-err));
@@ -543,119 +543,119 @@ srplug_agent_enable_subs(struct srplug_agent * agent,
 			return err;
 		}
 
-		srplug_sess_debug(agent->sess, "subscription worker enabled");
+		srplug_sess_debug(object->sess, "subscription worker enabled");
 	}
 
-	agent->cnt++;
+	object->cnt++;
 
 	return 0;
 }
 
 static void
-srplug_agent_disable_subs(struct srplug_agent * agent,
-                          const struct upoll *  poller)
+srplug_object_disable_subs(struct srplug_object * object,
+                           const struct upoll *  poller)
 {
-	if (agent->cnt) {
-		srplug_assert(agent->work.dispatch);
-		srplug_assert(agent->ctx);
+	if (object->cnt) {
+		srplug_assert(object->work.dispatch);
+		srplug_assert(object->ctx);
 
 		int fd;
 		int err __unused;
 
-		etux_timer_cancel(&agent->tmr);
+		etux_timer_cancel(&object->tmr);
 
-		err = sr_get_event_pipe(agent->ctx, &fd);
+		err = sr_get_event_pipe(object->ctx, &fd);
 		srplug_assert(err == SR_ERR_OK);
 		srplug_assert(fd >= 0);
 
 		/* Unregister from asynchronous poller. */
 		upoll_unregister(poller, fd);
 
-		agent->cnt = 0;
+		object->cnt = 0;
 
-		srplug_sess_debug(agent->sess, "subscription worker disabled");
+		srplug_sess_debug(object->sess, "subscription worker disabled");
 	}
 }
 
 int
-srplug_agent_change_subscribe(struct srplug_agent *            agent,
-                              const struct srplug_change_sub * subscription,
-                              void *                           data,
-                              const struct upoll *             poller)
+srplug_object_change_subscribe(struct srplug_object *           object,
+                               const struct srplug_change_sub * subscription,
+                               void *                           data,
+                               const struct upoll *             poller)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 	srplug_assert_change_sub(subscription);
 	srplug_assert(poller);
 
 	int err;
 
 	/* Register the configuration data subscription handler. */
-	err = srplug_register_change_sub(&agent->ctx,
-	                                 agent->sess,
+	err = srplug_register_change_sub(&object->ctx,
+	                                 object->sess,
 	                                 subscription,
 	                                 data);
 	if (err)
 		return err;
 
 	/* Enable asynchronous processing of subscriptions. */
-	return srplug_agent_enable_subs(agent, poller);
+	return srplug_object_enable_subs(object, poller);
 }
 
 int
-srplug_agent_oper_subscribe(struct srplug_agent *          agent,
-                            const struct srplug_oper_sub * subscription,
-                            void *                         data,
-                            const struct upoll *           poller)
+srplug_object_oper_subscribe(struct srplug_object *         object,
+                             const struct srplug_oper_sub * subscription,
+                             void *                         data,
+                             const struct upoll *           poller)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 	srplug_assert_oper_sub(subscription);
 	srplug_assert(poller);
 
 	int err;
 
 	/* Register the operational data subscription handler. */
-	err = srplug_register_oper_sub(&agent->ctx,
-	                               agent->sess,
+	err = srplug_register_oper_sub(&object->ctx,
+	                               object->sess,
 	                               subscription,
 	                               data);
 	if (err)
 		return err;
 
 	/* Enable asynchronous processing of subscriptions. */
-	return srplug_agent_enable_subs(agent, poller);
+	return srplug_object_enable_subs(object, poller);
 }
 
 int
-srplug_agent_rpc_subscribe(struct srplug_agent *         agent,
-                           const struct srplug_rpc_sub * subscription,
-                           void *                        data,
-                           const struct upoll *          poller)
+srplug_object_rpc_subscribe(struct srplug_object *        object,
+                            const struct srplug_rpc_sub * subscription,
+                            void *                        data,
+                            const struct upoll *          poller)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 	srplug_assert_rpc_sub(subscription);
 	srplug_assert(poller);
 
 	int err;
 
 	/* Register the RPC subscription handler. */
-	err = srplug_register_rpc_sub(&agent->ctx,
-	                              agent->sess,
+	err = srplug_register_rpc_sub(&object->ctx,
+	                              object->sess,
 	                              subscription,
 	                              data);
 	if (err)
 		return err;
 
 	/* Enable asynchronous processing of subscriptions. */
-	return srplug_agent_enable_subs(agent, poller);
+	return srplug_object_enable_subs(object, poller);
 }
 
 int
-srplug_agent_subscribe(struct srplug_agent *     agent,
-                       const struct srplug_sub * subscription,
-                       void *                    data,
-                       const struct upoll *      poller)
+srplug_object_subscribe(struct srplug_object *    object,
+                        const struct srplug_sub * subscription,
+                        void *                    data,
+                        const struct upoll *      poller)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 	srplug_assert(subscription);
 	srplug_assert(subscription->kind >= 0);
 	srplug_assert(subscription->kind < SRPLUG_SUB_KIND_NR);
@@ -663,22 +663,22 @@ srplug_agent_subscribe(struct srplug_agent *     agent,
 
 	switch (subscription->kind) {
 	case SRPLUG_CHANGE_SUB_KIND:
-		return srplug_agent_change_subscribe(agent,
-		                                     &subscription->change,
-		                                     data,
-		                                     poller);
+		return srplug_object_change_subscribe(object,
+		                                      &subscription->change,
+		                                      data,
+		                                      poller);
 
 	case SRPLUG_OPER_SUB_KIND:
-		return srplug_agent_oper_subscribe(agent,
-		                                   &subscription->oper,
-		                                   data,
-		                                   poller);
+		return srplug_object_oper_subscribe(object,
+		                                    &subscription->oper,
+		                                    data,
+		                                    poller);
 
 	case SRPLUG_RPC_SUB_KIND:
-		return srplug_agent_rpc_subscribe(agent,
-		                                  &subscription->rpc,
-		                                  data,
-		                                  poller);
+		return srplug_object_rpc_subscribe(object,
+		                                   &subscription->rpc,
+		                                   data,
+		                                   poller);
 
 	default:
 		srplug_assert(0);
@@ -687,20 +687,20 @@ srplug_agent_subscribe(struct srplug_agent *     agent,
 }
 
 int
-srplug_agent_subscribe_all(struct srplug_agent *      agent,
+srplug_object_subscribe_all(struct srplug_object *    object,
                             const struct srplug_sub * subscriptions,
                             unsigned int              nr,
                             void *                    data,
                             const struct upoll *      poller)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 	srplug_assert(subscriptions);
 	srplug_assert(nr);
 	srplug_assert(poller);
 
 	unsigned int             s;
-	sr_subscription_ctx_t ** ctx = &agent->ctx;
-	sr_session_ctx_t *       sess = agent->sess;
+	sr_subscription_ctx_t ** ctx = &object->ctx;
+	sr_session_ctx_t *       sess = object->sess;
 
 	for (s = 0; s < nr; s++) {
 		srplug_assert(subscriptions[s].kind >= 0);
@@ -741,13 +741,13 @@ srplug_agent_subscribe_all(struct srplug_agent *      agent,
 	}
 
 	/* Enable asynchronous processing of subscriptions. */
-	return srplug_agent_enable_subs(agent, poller);
+	return srplug_object_enable_subs(object, poller);
 }
 
 int
-srplug_agent_open(struct srplug_agent * agent)
+srplug_object_open(struct srplug_object * object)
 {
-	srplug_assert(agent);
+	srplug_assert(object);
 
 	sr_error_t         err;
 	sr_conn_ctx_t *    conn = NULL;
@@ -768,12 +768,12 @@ srplug_agent_open(struct srplug_agent * agent)
 		goto disconnect;
 	}
 
-	agent->sess = sess;
-	agent->ctx = NULL;
-	etux_timer_init(&agent->tmr, srplug_agent_expire_subs);
-	agent->cnt = 0;
+	object->sess = sess;
+	object->ctx = NULL;
+	etux_timer_init(&object->tmr, srplug_object_expire_subs);
+	object->cnt = 0;
 
-	srplug_sess_debug(agent->sess, "sysrepo agent opened");
+	srplug_sess_debug(object->sess, "sysrepo object opened");
 
 	return 0;
 
@@ -785,16 +785,16 @@ disconnect:
 }
 
 void
-srplug_agent_close(struct srplug_agent * agent, const struct upoll *  poller)
+srplug_object_close(struct srplug_object * object, const struct upoll *  poller)
 {
-	srplug_agent_assert(agent);
+	srplug_object_assert(object);
 
-	sr_conn_ctx_t * conn = sr_session_get_connection(agent->sess);
+	sr_conn_ctx_t * conn = sr_session_get_connection(object->sess);
 
-	srplug_sess_debug(agent->sess, "closing sysrepo agent..");
+	srplug_sess_debug(object->sess, "closing sysrepo object.");
 
 	/* Stop asynchronous processing of subscriptions. */
-	srplug_agent_disable_subs(agent, poller);
+	srplug_object_disable_subs(object, poller);
 
 #if 0
 	/*
@@ -802,15 +802,15 @@ srplug_agent_close(struct srplug_agent * agent, const struct upoll *  poller)
 	 * Keep this code for reference purpose only since all subscriptions are
 	 * free'd at sr_disconnect() time.
 	 */
-	srplug_assert(!etux_timer_is_armed(&agent->tmr));
-	srplug_clear_subs(agent->ctx, agent->sess);
+	srplug_assert(!etux_timer_is_armed(&object->tmr));
+	srplug_clear_subs(object->ctx, object->sess);
 
 	/*
 	 * Close Sysrepo datastore session.
 	 * Keep this code for reference purpose only since all sessions are
 	 * free'd at sr_disconnect() time.
 	 */
-	sr_session_stop(agent->sess);
+	sr_session_stop(object->sess);
 #endif
 
 	/* Close all sessions and connection to Sysrepo datastores. */
