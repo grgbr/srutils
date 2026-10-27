@@ -96,6 +96,10 @@ srepo_apply_changes(sr_session_ctx_t * session)
 	__srepo_nonull(1) __warn_result __srepo_export;
 
 extern sr_error_t
+srepo_discard_changes(sr_session_ctx_t * session)
+	__srepo_nonull(1) __srepo_export;
+
+extern sr_error_t
 srepo_discard_oper_changes(sr_session_ctx_t * session, const char * module)
 	__srepo_nonull(1) __srepo_export;
 
@@ -117,7 +121,25 @@ srepo_replace_config(sr_session_ctx_t * session,
                      const char *       module,
                      struct lyd_node *  tree)
 	__srepo_nonull(1, 2, 3) __warn_result __srepo_export;
-	
+
+extern sr_error_t
+srepo_session_start(sr_conn_ctx_t *     connection,
+                    sr_datastore_t      datastore,
+                    sr_session_ctx_t ** session)
+	__srepo_nonull(1, 3) __warn_result __srepo_export;
+
+extern sr_error_t
+srepo_session_stop(sr_session_ctx_t * session)
+	__srepo_nonull(1) __srepo_export;
+
+extern sr_error_t
+srepo_connect(sr_conn_ctx_t ** connection)
+	__srepo_nonull(1) __warn_result __srepo_export;
+
+extern sr_error_t
+srepo_disconnect(sr_conn_ctx_t * connection)
+	__srepo_nonull(1) __srepo_export;
+
 #if defined(CONFIG_SREPO_PRINT)
 
 extern sr_error_t

@@ -136,6 +136,24 @@ srepo_apply_changes(sr_session_ctx_t * session)
 }
 
 sr_error_t
+srepo_discard_changes(sr_session_ctx_t * session)
+{
+	srepo_assert(session);
+
+	sr_error_t err;
+
+	err = sr_discard_changes(session);
+	if (err == SR_ERR_OK)
+		return SR_ERR_OK;
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
 srepo_discard_oper_changes(sr_session_ctx_t * session, const char * module)
 {
 	srepo_assert(session);
@@ -167,9 +185,92 @@ srepo_replace_config(sr_session_ctx_t * session,
 	srepo_assert(module[0]);
 	srepo_assert(tree);
 
-	int err;
+	sr_error_t err;
 
 	err = sr_replace_config(session, module, tree, 0);
+	if (err == SR_ERR_OK)
+		return SR_ERR_OK;
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
+srepo_session_start(sr_conn_ctx_t *     connection,
+                    sr_datastore_t      datastore,
+                    sr_session_ctx_t ** session)
+{
+	srepo_assert(connection);
+	srepo_assert((datastore == SR_DS_STARTUP) ||
+	             (datastore == SR_DS_RUNNING) ||
+	             (datastore == SR_DS_OPERATIONAL) ||
+	             (datastore == SR_DS_FACTORY_DEFAULT));
+	srepo_assert(session);
+
+	sr_error_t err;
+
+	err = sr_session_start(connection, datastore, session);
+	if (err == SR_ERR_OK) {
+		srepo_assert(session);
+		return SR_ERR_OK;
+	}
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
+srepo_session_stop(sr_session_ctx_t * session)
+{
+	srepo_assert(session);
+
+	sr_error_t err;
+
+	err = sr_session_stop(session);
+	if (err == SR_ERR_OK)
+		return SR_ERR_OK;
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
+srepo_connect(sr_conn_ctx_t ** connection)
+{
+	srepo_assert(connection);
+
+	sr_error_t err;
+
+	err = sr_connect(SR_CONN_DEFAULT, connection);
+	if (err == SR_ERR_OK) {
+		srepo_assert(connection);
+		return SR_ERR_OK;
+	}
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
+srepo_disconnect(sr_conn_ctx_t * connection)
+{
+	srepo_assert(connection);
+
+	sr_error_t err;
+
+	err = sr_disconnect(connection);
 	if (err == SR_ERR_OK)
 		return SR_ERR_OK;
 

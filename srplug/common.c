@@ -754,14 +754,14 @@ srplug_object_open(struct srplug_object * object)
 	sr_session_ctx_t * sess = NULL;
 
 	/* Connect to sysrepo */
-	err = sr_connect(SR_CONN_DEFAULT, &conn);
+	err = srepo_connect(&conn);
 	if (err != SR_ERR_OK) {
 		srplug_err("cannot connect to datastore: %s",
 		           srepo_errstr(err));
 		return -EPERM;
 	}
 
-	err = sr_session_start(conn, SR_DS_RUNNING, &sess);
+	err = srepo_session_start(conn, SR_DS_RUNNING, &sess);
 	if (err) {
 		srplug_err("cannot start datastore session: %s",
 		           srepo_errstr(err));
@@ -779,7 +779,7 @@ srplug_object_open(struct srplug_object * object)
 
 disconnect:
 	/* Also closes all sessions related to this connection. */
-	sr_disconnect(conn);
+	srepo_disconnect(conn);
 
 	return -EPERM;
 }
@@ -800,7 +800,7 @@ srplug_object_close(struct srplug_object * object, const struct upoll *  poller)
 	/*
 	 * Release all subscriptions.
 	 * Keep this code for reference purpose only since all subscriptions are
-	 * free'd at sr_disconnect() time.
+	 * free'd at srepo_disconnect() time.
 	 */
 	srplug_assert(!etux_timer_is_armed(&object->tmr));
 	srplug_clear_subs(object->ctx, object->sess);
@@ -808,11 +808,11 @@ srplug_object_close(struct srplug_object * object, const struct upoll *  poller)
 	/*
 	 * Close Sysrepo datastore session.
 	 * Keep this code for reference purpose only since all sessions are
-	 * free'd at sr_disconnect() time.
+	 * free'd at srepo_disconnect() time.
 	 */
-	sr_session_stop(object->sess);
+	srepo_session_stop(object->sess);
 #endif
 
 	/* Close all sessions and connection to Sysrepo datastores. */
-	sr_disconnect(conn);
+	srepo_disconnect(conn);
 }
