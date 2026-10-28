@@ -2,6 +2,7 @@
 #define _SREPO_COMMON_H
 
 #include <srutils/srepo/priv/common.h>
+#include <stdbool.h>
 #include <stdarg.h>
 
 /**
@@ -89,6 +90,23 @@ srepo_switch_dstore(sr_session_ctx_t * session, sr_datastore_t dstore)
 
 	ret = sr_session_switch_ds(session, dstore);
 	srepo_assert(ret == SR_ERR_OK);
+}
+
+static inline __srepo_nonull(1) __warn_result
+bool
+srepo_has_changes(const sr_session_ctx_t * session)
+{
+	srepo_assert(session);
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) ==
+	                                SR_DS_STARTUP) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	                                SR_DS_RUNNING) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	                                SR_DS_CANDIDATE) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	                                SR_DS_OPERATIONAL));
+
+	return !!sr_has_changes((sr_session_ctx_t *)session);
 }
 
 extern sr_error_t
