@@ -206,6 +206,7 @@ srepo_session_start(sr_conn_ctx_t *     connection,
 	srepo_assert(connection);
 	srepo_assert((datastore == SR_DS_STARTUP) ||
 	             (datastore == SR_DS_RUNNING) ||
+	             (datastore == SR_DS_CANDIDATE) ||
 	             (datastore == SR_DS_OPERATIONAL) ||
 	             (datastore == SR_DS_FACTORY_DEFAULT));
 	srepo_assert(session);
@@ -229,6 +230,11 @@ sr_error_t
 srepo_session_stop(sr_session_ctx_t * session)
 {
 	srepo_assert(session);
+	srepo_assert((sr_session_get_ds(session) == SR_DS_STARTUP) ||
+	             (sr_session_get_ds(session) == SR_DS_RUNNING) ||
+	             (sr_session_get_ds(session) == SR_DS_CANDIDATE) ||
+	             (sr_session_get_ds(session) == SR_DS_OPERATIONAL) ||
+	             (sr_session_get_ds(session) == SR_DS_FACTORY_DEFAULT));
 
 	sr_error_t err;
 
