@@ -95,6 +95,24 @@ extern char *
 srepo_sch_node_path(const struct lysc_node * node)
 	__srepo_nonull(1) __returns_nonull __warn_result __srepo_export;
 
+static inline __srepo_nonull(1) __warn_result
+const char *
+srepo_sch_leaf_dflt(const struct lysc_node_leaf * leaf)
+{
+	srepo_assert(leaf);
+	srepo_assert(srepo_sch_node_type((const struct lysc_node *)leaf) ==
+	             LYS_LEAF);
+
+	return leaf->dflt.str;
+}
+
+extern sr_error_t
+srepo_sch_validate_value(const struct lysc_node *  node,
+                         const char *              value,
+                         size_t                    length,
+                         const struct lysc_type ** type)
+	__srepo_nonull(1) __warn_result __srepo_export;
+
 /******************************************************************************
  * Searching / browsing YANG (compiled) schema nodes / trees.
  ******************************************************************************/

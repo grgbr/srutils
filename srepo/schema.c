@@ -25,6 +25,27 @@ srepo_sch_node_path(const struct lysc_node * node)
 	srepo_abort();
 }
 
+sr_error_t
+srepo_sch_validate_value(const struct lysc_node *  node,
+                         const char *              value,
+                         size_t                    length,
+                         const struct lysc_type ** type)
+{
+	srepo_assert(node);
+	srepo_assert(value);
+	srepo_assert(length <= UINT32_MAX);
+
+	LY_ERR err;
+
+	err = lyd_value_validate(node, value, length, NULL, type, NULL);
+	if (err == LY_SUCCESS)
+		return SR_ERR_OK;
+
+	srepo_assert(err != LY_EINCOMPLETE);
+
+	return srepo_ly_error(err);
+}
+
 /******************************************************************************
  * Searching / browsing YANG (compiled) schema nodes / trees.
  ******************************************************************************/

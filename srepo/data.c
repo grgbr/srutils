@@ -69,12 +69,23 @@ srepo_dat_change_bypath(sr_session_ctx_t * session,
                         uint32_t           flags)
 {
 	srepo_assert(session);
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_STARTUP) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_RUNNING) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_CANDIDATE) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_OPERATIONAL));
 	srepo_assert(srepo_xpath_validate(path) > 0);
 	srepo_assert(value);
 	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
 	                         SR_EDIT_NON_RECURSIVE |
 	                         SR_EDIT_STRICT |
 	                         SR_EDIT_ISOLATE)));
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) !=
+	              SR_DS_OPERATIONAL) ||
+	             (flags & (SR_EDIT_NON_RECURSIVE | SR_EDIT_ISOLATE)));
 
 	sr_error_t ret;
 
@@ -98,11 +109,22 @@ srepo_dat_vchangef_bypath(sr_session_ctx_t * session,
                           va_list            args)
 {
 	srepo_assert(session);
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_STARTUP) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_RUNNING) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_CANDIDATE) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_OPERATIONAL));
 	srepo_assert(srepo_xpath_validate(path) > 0);
 	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
 	                         SR_EDIT_NON_RECURSIVE |
 	                         SR_EDIT_STRICT |
 	                         SR_EDIT_ISOLATE)));
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) !=
+	              SR_DS_OPERATIONAL) ||
+	             (flags & (SR_EDIT_NON_RECURSIVE | SR_EDIT_ISOLATE)));
 	srepo_assert(format);
 	srepo_assert(format[0]);
 
@@ -115,6 +137,42 @@ srepo_dat_vchangef_bypath(sr_session_ctx_t * session,
 
 	ret = sr_set_item_str(session, path, val, origin, flags);
 	srepo_free(val);
+	if (ret == SR_ERR_OK)
+		return SR_ERR_OK;
+
+	srepo_assert(ret != SR_ERR_INVAL_ARG);
+	if (ret == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return ret;
+}
+
+sr_error_t
+srepo_dat_delete_bypath(sr_session_ctx_t * session,
+                        const char *       path,
+                        uint32_t           flags)
+{
+	srepo_assert(session);
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_STARTUP) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_RUNNING) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_CANDIDATE) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_OPERATIONAL));
+	srepo_assert(srepo_xpath_validate(path) > 0);
+	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
+	                         SR_EDIT_NON_RECURSIVE |
+	                         SR_EDIT_STRICT |
+	                         SR_EDIT_ISOLATE)));
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) !=
+	              SR_DS_OPERATIONAL) ||
+	             (flags & (SR_EDIT_NON_RECURSIVE | SR_EDIT_ISOLATE)));
+
+	sr_error_t ret;
+
+	ret = sr_delete_item(session, path, flags);
 	if (ret == SR_ERR_OK)
 		return SR_ERR_OK;
 

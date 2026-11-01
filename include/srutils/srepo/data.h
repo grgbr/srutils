@@ -75,12 +75,13 @@ static inline const char *
 srepo_dat_node_dflt(const struct lyd_node * node)
 {
 	srepo_assert(node);
-	srepo_assert(node->schema);
-	srepo_assert(srepo_dat_node_type(node) == LYS_LEAF);
 
-	const struct lysc_node_leaf * leaf = (const struct lysc_node_leaf *)
-	                                     node->schema;
-	return leaf->dflt.str;
+	const struct lysc_node * scn = srepo_dat_node_schema(node);
+
+	srepo_assert(scn);
+	srepo_assert(srepo_sch_node_type(scn) == LYS_LEAF);
+
+	return srepo_sch_leaf_dflt((const struct lysc_node_leaf *)scn);
 }
 
 static inline LY_DATA_TYPE
@@ -157,11 +158,22 @@ srepo_dat_changef_bypath(sr_session_ctx_t * session,
                          ...)
 {
 	srepo_assert(session);
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_STARTUP) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_RUNNING) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_CANDIDATE) ||
+	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
+	              SR_DS_OPERATIONAL));
 	srepo_assert(srepo_xpath_validate(path) > 0);
 	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
 	                         SR_EDIT_NON_RECURSIVE |
 	                         SR_EDIT_STRICT |
 	                         SR_EDIT_ISOLATE)));
+	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) !=
+	              SR_DS_OPERATIONAL) ||
+	             (flags & (SR_EDIT_NON_RECURSIVE | SR_EDIT_ISOLATE)));
 	srepo_assert(format);
 	srepo_assert(format[0]);
 
@@ -175,6 +187,12 @@ srepo_dat_changef_bypath(sr_session_ctx_t * session,
 
 	return ret;
 }
+
+extern sr_error_t
+srepo_dat_delete_bypath(sr_session_ctx_t * session,
+                        const char *       path,
+                        uint32_t           flags)
+	__srepo_nonull(1, 2) __srepo_export;
 
 extern sr_error_t
 srepo_dat_new_node(const struct ly_ctx * context,

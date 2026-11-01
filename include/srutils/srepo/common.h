@@ -121,6 +121,16 @@ extern sr_error_t
 srepo_discard_oper_changes(sr_session_ctx_t * session, const char * module)
 	__srepo_nonull(1) __srepo_export;
 
+extern sr_error_t
+srepo_validate(sr_session_ctx_t * session, const char * module)
+	__srepo_nonull(1) __warn_result __srepo_export;
+
+extern sr_error_t
+srepo_copy_config(sr_session_ctx_t * session,
+                  const char *       module,
+                  sr_datastore_t     datastore)
+	__srepo_nonull(1) __srepo_export;
+
 /*
  * Replace an entire sysrepo configuration datastore with the data tree given in
  * argument.

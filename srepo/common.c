@@ -173,6 +173,28 @@ srepo_discard_oper_changes(sr_session_ctx_t * session, const char * module)
 }
 
 sr_error_t
+srepo_validate(sr_session_ctx_t * session, const char * module)
+{
+	srepo_assert(session);
+	srepo_assert((sr_session_get_ds(session) == SR_DS_STARTUP) ||
+	             (sr_session_get_ds(session) == SR_DS_RUNNING) ||
+	             (sr_session_get_ds(session) == SR_DS_CANDIDATE) ||
+	             (sr_session_get_ds(session) == SR_DS_FACTORY_DEFAULT));
+
+	sr_error_t err;
+
+	err = sr_validate(session, module, 0);
+	if (err == SR_ERR_OK)
+		return SR_ERR_OK;
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
 srepo_replace_config(sr_session_ctx_t * session,
                      const char *       module,
                      struct lyd_node *  tree)
@@ -190,6 +212,35 @@ srepo_replace_config(sr_session_ctx_t * session,
 	err = sr_replace_config(session, module, tree, 0);
 	if (err == SR_ERR_OK)
 		return SR_ERR_OK;
+
+	srepo_assert(err != SR_ERR_INVAL_ARG);
+	if (err == SR_ERR_NO_MEMORY)
+		srepo_abort();
+
+	return err;
+}
+
+sr_error_t
+srepo_copy_config(sr_session_ctx_t * session,
+                  const char *       module,
+                  sr_datastore_t     datastore)
+{
+	srepo_assert(session);
+	srepo_assert((sr_session_get_ds(session) == SR_DS_STARTUP) ||
+	             (sr_session_get_ds(session) == SR_DS_RUNNING) ||
+	             (sr_session_get_ds(session) == SR_DS_CANDIDATE));
+	srepo_assert((datastore == SR_DS_STARTUP) ||
+	             (datastore == SR_DS_RUNNING) ||
+	             (datastore == SR_DS_CANDIDATE));
+	srepo_assert(sr_session_get_ds(session) != datastore);
+
+	sr_error_t err;
+
+	err = sr_copy_config(session, module, datastore, 0);
+	if (err == SR_ERR_OK) {
+		srepo_assert(session);
+		return SR_ERR_OK;
+	}
 
 	srepo_assert(err != SR_ERR_INVAL_ARG);
 	if (err == SR_ERR_NO_MEMORY)
