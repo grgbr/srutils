@@ -171,9 +171,6 @@ srepo_dat_changef_bypath(sr_session_ctx_t * session,
 	                         SR_EDIT_NON_RECURSIVE |
 	                         SR_EDIT_STRICT |
 	                         SR_EDIT_ISOLATE)));
-	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) !=
-	              SR_DS_OPERATIONAL) ||
-	             (flags & (SR_EDIT_NON_RECURSIVE | SR_EDIT_ISOLATE)));
 	srepo_assert(format);
 	srepo_assert(format[0]);
 
