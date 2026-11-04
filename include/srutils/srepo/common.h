@@ -150,6 +150,15 @@ srepo_replace_config(sr_session_ctx_t * session,
                      struct lyd_node *  tree)
 	__srepo_nonull(1, 2, 3) __warn_result __srepo_export;
 
+static inline __srepo_nonull(1) __warn_result
+sr_datastore_t
+srepo_session_dstore(const sr_session_ctx_t * session)
+{
+	srepo_assert(session);
+
+	return sr_session_get_ds((sr_session_ctx_t *)session);
+}
+
 extern sr_error_t
 srepo_session_start(sr_conn_ctx_t *     connection,
                     sr_datastore_t      datastore,

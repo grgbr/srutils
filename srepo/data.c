@@ -362,6 +362,8 @@ srepo_dat_load_data(sr_session_ctx_t * session,
 
 	err = sr_get_data(session, path, depth, 0, flags, data);
 	if (err != SR_ERR_OK) {
+		srepo_assert(err != SR_ERR_INVAL_ARG);
+
 		if (err == SR_ERR_NOT_FOUND)
 			/* Path is invalid: no nodes will ever match it. */
 			err = SR_ERR_INVAL_ARG;
@@ -393,6 +395,8 @@ srepo_dat_load_node(sr_session_ctx_t * session,
 
 	err = sr_get_node(session, path, 0, data);
 	if (err != SR_ERR_OK) {
+		srepo_assert(err != SR_ERR_INVAL_ARG);
+
 		if (err == SR_ERR_NO_MEMORY)
 			srepo_abort();
 
@@ -419,6 +423,8 @@ srepo_dat_load_subtree(sr_session_ctx_t * session,
 
 	err = sr_get_subtree(session, xpath, 0, data);
 	if (err != SR_ERR_OK) {
+		srepo_assert(err != SR_ERR_INVAL_ARG);
+
 		if (err == SR_ERR_NOT_FOUND)
 			/* Path is invalid: no nodes will ever match it. */
 			err = SR_ERR_INVAL_ARG;
