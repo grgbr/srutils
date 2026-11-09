@@ -330,6 +330,57 @@ srepo_sch_find_module(const struct ly_ctx * context, const char * module)
 	__srepo_nonull(1, 2) __srepo_export;
 
 /******************************************************************************
+ * YANG schema path iteration (so-called atoms).
+ ******************************************************************************/
+
+struct srepo_sch_path {
+	unsigned int              cnt;
+	unsigned int              nr;
+	const struct lysc_node ** atoms;
+};
+
+#define SREPO_PATH_ATOM_MAX \
+	((SREPO_XPATH_SIZE - 1) / 2U)
+
+#define srepo_sch_assert_path(_path) \
+	srepo_assert(_path); \
+	srepo_assert((_path)->nr <= SREPO_PATH_ATOM_MAX); \
+	srepo_assert((_path)->cnt <= (_path)->nr); \
+	srepo_assert((_path)->atoms)
+
+#define srepo_sch_foreach_path_atom(_path, _cnt, _atom) \
+	for (_cnt = 0; \
+	     (_cnt < (_path)->cnt) && (_atom = (_path)->atoms[_cnt], true); \
+	     _cnt++)
+
+static inline __srepo_nonull(1)
+unsigned int
+srepo_sch_path_atom_count(const struct srepo_sch_path * path)
+{
+	srepo_sch_assert_path(path);
+
+	return path->cnt;
+}
+
+extern char *
+srepo_sch_path_string(const struct srepo_sch_path * path)
+	__srepo_nonull(1) __srepo_export;
+
+extern void
+srepo_sch_init_path_from_node(struct srepo_sch_path *  path,
+                              const struct lysc_node * node)
+	__srepo_nonull(1, 2) __srepo_export;
+
+static inline __srepo_nonull(1)
+void
+srepo_sch_fini_path(struct srepo_sch_path * path)
+{
+	srepo_sch_assert_path(path);
+
+	srepo_free(path->atoms);
+}
+
+/******************************************************************************
  * Logging YANG schema nodes.
  ******************************************************************************/
 

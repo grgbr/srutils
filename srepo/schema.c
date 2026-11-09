@@ -400,6 +400,152 @@ srepo_sch_find_module(const struct ly_ctx * context, const char * module)
 }
 
 /******************************************************************************
+ * Yang schema path iteration (so-called atoms).
+ ******************************************************************************/
+
+#define SREPO_PATH_INIT_NR \
+	(4U)
+
+static int
+srepo_sch_push_path_atom(struct srepo_sch_path *  path,
+                         const struct lysc_node * atom)
+{
+	srepo_sch_assert_path(path);
+	srepo_assert(atom);
+
+	if (path->cnt == path->nr) {
+		unsigned int nr = 2 * path->nr;
+
+		if (nr >= SREPO_PATH_ATOM_MAX)
+			return -ENOBUFS;
+
+		path->nr = nr;
+		path->atoms = srepo_realloc(path->atoms,
+		                            nr * sizeof(path->atoms[0]));
+		srepo_assert(path->atoms);
+	}
+
+	path->atoms[path->cnt++] = atom;
+
+	return 0;
+}
+
+static void
+srepo_sch_invert_path(struct srepo_sch_path * path)
+{
+	srepo_sch_assert_path(path);
+
+	unsigned int cnt = path->cnt / 2;
+	unsigned int c;
+
+	for (c = 0; c < cnt; c++) {
+		unsigned int             end = path->cnt - c - 1;
+		const struct lysc_node * tmp = path->atoms[c];
+
+		path->atoms[c] = path->atoms[end];
+		path->atoms[end] = tmp;
+	}
+}
+
+char *
+srepo_sch_path_string(const struct srepo_sch_path * path)
+{
+	unsigned int              cnt;
+	const struct lysc_node *  scn;
+	const struct lys_module * mod = NULL;
+	char *                    pth;
+	char *                    str;
+	size_t                    sz = SREPO_XPATH_SIZE;
+
+	pth = srepo_malloc(SREPO_XPATH_SIZE);
+	srepo_assert(pth);
+
+	str = pth;
+	srepo_sch_foreach_path_atom(path, cnt, scn) {
+		const char * nname = srepo_sch_node_name(scn);
+		size_t       len;
+
+		len = strnlen(nname, SREPO_XPATH_SIZE);
+		srepo_assert(len <= SREPO_XPATH_SIZE);
+		if (!len)
+			goto free;
+
+		if (mod != scn->module) {
+			const char * mname;
+			size_t       mlen;
+
+			mod = scn->module;
+
+			mname = mod->name;
+			mlen = strnlen(mname, SREPO_XPATH_SIZE);
+			srepo_assert(mlen <= SREPO_XPATH_SIZE);
+			if (!mlen || ((1 + mlen + 1 + len) >= sz))
+				goto free;
+
+			str[0] = '/';
+			memcpy(&str[1], mname, mlen);
+			str[1 + mlen] = ':';
+			memcpy(&str[1 + mlen + 1], nname, len);
+
+			len = 1 + mlen + 1 + len;
+		}
+		else {
+			if ((1 + len) >= sz)
+				goto free;
+
+			str[0] = '/';
+			memcpy(&str[1], nname, len);
+
+			len = 1 + len;
+		}
+
+		str += len;
+		sz -= len;
+	}
+
+	*str = '\0';
+
+	return pth;
+
+free:
+	srepo_free(pth);
+
+	return NULL;
+}
+
+static
+void
+srepo_sch_init_path(struct srepo_sch_path * path)
+{
+	srepo_assert(path);
+
+	path->cnt = 0;
+	path->nr = SREPO_PATH_INIT_NR;
+	path->atoms = srepo_malloc(SREPO_PATH_INIT_NR * sizeof(path->atoms[0]));
+	srepo_assert(path->atoms);
+}
+
+void
+srepo_sch_init_path_from_node(struct srepo_sch_path *  path,
+                              const struct lysc_node * node)
+{
+	srepo_assert(path);
+	srepo_assert(node);
+
+	srepo_sch_init_path(path);
+
+	do {
+		if (!(srepo_sch_node_type(node) &
+		      (LYS_CHOICE | LYS_CASE | LYS_INPUT | LYS_OUTPUT)))
+			/* Skip schema only nodes. */
+			srepo_sch_push_path_atom(path, node);
+		node = srepo_sch_node_parent(node);
+	} while (node);
+
+	srepo_sch_invert_path(path);
+}
+
+/******************************************************************************
  * Logging YANG schema nodes.
  ******************************************************************************/
 
