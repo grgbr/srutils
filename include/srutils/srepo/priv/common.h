@@ -56,16 +56,7 @@ srepo_abort(void)
 	abort();
 }
 
-static inline
-void
-srepo_free(void * data)
-{
-	free(data);
-}
-
-static inline __alloc_size(1) \
-              __returns_nonull \
-              __warn_result
+static inline __alloc_size(1) __returns_nonull __warn_result
 void *
 srepo_malloc(size_t size)
 {
@@ -78,6 +69,28 @@ srepo_malloc(size_t size)
 		srepo_abort();
 
 	return data;
+}
+
+static inline __alloc_size(2) __returns_nonull __warn_result
+void *
+srepo_realloc(void * mem, size_t size)
+{
+	srepo_assert(size);
+
+	void * data;
+
+	data = realloc(mem, size);
+	if (!data)
+		srepo_abort();
+
+	return data;
+}
+
+static inline
+void
+srepo_free(void * data)
+{
+	free(data);
 }
 
 #endif /* _SREPO_PRIV_COMMON_H */
