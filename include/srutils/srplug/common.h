@@ -206,7 +206,7 @@ struct srplug_oper_sub {
 	srplug_assert(!((_sub)->options & \
 	                (SR_SUBSCR_NO_THREAD | SR_SUBSCR_THREAD_SUSPEND)))
 
-#define SRPLUG_OPER_SUB(_mod, _xpath, _feat, _on_get, _prio, _opts) \
+#define SRPLUG_OPER_SUB(_mod, _xpath, _feat, _on_get, _opts) \
 	{ \
 		.kind = SRPLUG_OPER_SUB_KIND, \
 		.oper = { \
@@ -241,7 +241,7 @@ struct srplug_rpc_sub {
 	srplug_assert(!((_sub)->options & \
 	                (SR_SUBSCR_NO_THREAD | SR_SUBSCR_THREAD_SUSPEND)))
 
-#define SRPLUG_RPC_SUB(_mod, _xpath, _feat, _on_change, _prio, _opts) \
+#define SRPLUG_RPC_SUB(_xpath, _feat, _on_rpc, _prio, _opts) \
 	{ \
 		.kind = SRPLUG_RPC_SUB_KIND, \
 		.rpc  = { \
