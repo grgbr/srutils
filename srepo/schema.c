@@ -400,13 +400,92 @@ srepo_sch_find_module(const struct ly_ctx * context, const char * module)
 }
 
 /******************************************************************************
- * Yang schema path iteration (so-called atoms).
+ * YANG schema path manipulations.
  ******************************************************************************/
 
-#define SREPO_PATH_INIT_NR \
-	(4U)
+ssize_t
+srepo_sch_join_path(char *                     path,
+                    const struct lys_module ** module,
+                    const struct lysc_node *   node,
+                    size_t                     size)
+{
+	srepo_assert(path);
+	srepo_assert(node);
+	srepo_assert(size <= SREPO_XPATH_SIZE);
 
-static int
+	const char * name = srepo_sch_node_name(node);
+	size_t       len = strnlen(name, SREPO_XPATH_NODE_SIZE);
+
+	srepo_assert(len);
+	srepo_assert(len <= SREPO_XPATH_SIZE);
+
+	size = stroll_min(size, (size_t)SREPO_XPATH_NODE_SIZE);
+
+	if (*module != node->module) {
+		const char * pref = node->module->name;
+		size_t       plen = strnlen(pref, SREPO_XPATH_NODE_SIZE);
+
+		srepo_assert(plen);
+		srepo_assert(plen <= SREPO_XPATH_NODE_SIZE);
+		if ((1 + plen + 1 + len) >= size)
+			return -ENOBUFS;
+
+		path[0] = '/';
+		memcpy(&path[1], pref, plen);
+		path[1 + plen] = ':';
+		memcpy(&path[1 + plen + 1], name, len);
+
+		*module = node->module;
+
+		return 1 + (ssize_t)plen + 1 + (ssize_t)len;
+	}
+	else {
+		if ((1 + len) >= size)
+			return -ENOBUFS;
+
+		path[0] = '/';
+		memcpy(&path[1], name, len);
+
+		return 1 + (ssize_t)len;
+	}
+}
+
+ssize_t
+srepo_sch_fill_path_pred(char *                    path,
+                         const struct lysc_node *  node,
+                         const char *              value,
+                         size_t                    size)
+{
+	srepo_assert(path);
+	srepo_assert(node);
+	srepo_assert(srepo_sch_is_key(node));
+	srepo_assert(value);
+	srepo_assert(size <= SREPO_XPATH_SIZE);
+
+	const char * name = srepo_sch_node_name(node);
+	size_t       len = strnlen(name, SREPO_XPATH_NODE_SIZE);
+	size_t       vlen = strnlen(value, SREPO_XPATH_SIZE);
+
+	srepo_assert(len);
+	srepo_assert(len <= SREPO_XPATH_NODE_SIZE);
+	srepo_assert(vlen);
+	srepo_assert(vlen <= SREPO_XPATH_SIZE);
+
+	if ((1 + len + 2 + vlen + 1) >= size)
+		return -ENOBUFS;
+
+	path[0] = '[';
+	memcpy(&path[1], name, len);
+	path[1 + len] = '=';
+	path[1 + len + 1] = '\'';
+	memcpy(&path[1 + len + 2], value, vlen);
+	path[1 + len + 2 + vlen] = '\'';
+	path[1 + len + 2 + vlen + 1] = ']';
+
+	return 1 + (ssize_t)len + 2 + (ssize_t)vlen + 1;
+}
+
+int
 srepo_sch_push_path_atom(struct srepo_sch_path *  path,
                          const struct lysc_node * atom)
 {
@@ -430,7 +509,7 @@ srepo_sch_push_path_atom(struct srepo_sch_path *  path,
 	return 0;
 }
 
-static void
+void
 srepo_sch_invert_path(struct srepo_sch_path * path)
 {
 	srepo_sch_assert_path(path);
@@ -450,59 +529,32 @@ srepo_sch_invert_path(struct srepo_sch_path * path)
 char *
 srepo_sch_path_string(const struct srepo_sch_path * path)
 {
-	unsigned int              cnt;
-	const struct lysc_node *  scn;
-	const struct lys_module * mod = NULL;
 	char *                    pth;
 	char *                    str;
+	unsigned int              cnt;
+	const struct lysc_node *  atom;
+	const struct lys_module * mod = NULL;
 	size_t                    sz = SREPO_XPATH_SIZE;
 
 	pth = srepo_malloc(SREPO_XPATH_SIZE);
 	srepo_assert(pth);
 
 	str = pth;
-	srepo_sch_foreach_path_atom(path, cnt, scn) {
-		const char * nname = srepo_sch_node_name(scn);
-		size_t       len;
+	srepo_sch_foreach_path_atom(path, cnt, atom) {
+		ssize_t ret;
 
-		len = strnlen(nname, SREPO_XPATH_SIZE);
-		srepo_assert(len <= SREPO_XPATH_SIZE);
-		if (!len)
+		ret = srepo_sch_join_path(str, &mod, atom, sz);
+		srepo_assert(ret);
+		if (ret < 0)
 			goto free;
 
-		if (mod != scn->module) {
-			const char * mname;
-			size_t       mlen;
-
-			mod = scn->module;
-
-			mname = mod->name;
-			mlen = strnlen(mname, SREPO_XPATH_SIZE);
-			srepo_assert(mlen <= SREPO_XPATH_SIZE);
-			if (!mlen || ((1 + mlen + 1 + len) >= sz))
-				goto free;
-
-			str[0] = '/';
-			memcpy(&str[1], mname, mlen);
-			str[1 + mlen] = ':';
-			memcpy(&str[1 + mlen + 1], nname, len);
-
-			len = 1 + mlen + 1 + len;
-		}
-		else {
-			if ((1 + len) >= sz)
-				goto free;
-
-			str[0] = '/';
-			memcpy(&str[1], nname, len);
-
-			len = 1 + len;
-		}
-
-		str += len;
-		sz -= len;
+		srepo_assert((size_t)ret < sz);
+		str += (size_t)ret;
+		sz -= (size_t)ret;
 	}
 
+	srepo_assert(sz);
+	srepo_assert(sz < SREPO_XPATH_SIZE);
 	*str = '\0';
 
 	return pth;
@@ -513,7 +565,8 @@ free:
 	return NULL;
 }
 
-static
+#define SREPO_PATH_INIT_NR (4U)
+
 void
 srepo_sch_init_path(struct srepo_sch_path * path)
 {

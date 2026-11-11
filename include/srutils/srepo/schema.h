@@ -330,8 +330,22 @@ srepo_sch_find_module(const struct ly_ctx * context, const char * module)
 	__srepo_nonull(1, 2) __srepo_export;
 
 /******************************************************************************
- * YANG schema path iteration (so-called atoms).
+ * YANG schema path manipulations.
  ******************************************************************************/
+
+extern ssize_t
+srepo_sch_join_path(char *                     path,
+                    const struct lys_module ** module,
+                    const struct lysc_node *   node,
+                    size_t                     size)
+	__srepo_nonull(1, 2, 3) __srepo_export;
+
+extern ssize_t
+srepo_sch_fill_path_pred(char *                    path,
+                         const struct lysc_node *  node,
+                         const char *              value,
+                         size_t                    size)
+	__srepo_nonull(1, 2, 3) __srepo_export;
 
 struct srepo_sch_path {
 	unsigned int              cnt;
@@ -362,8 +376,21 @@ srepo_sch_path_atom_count(const struct srepo_sch_path * path)
 	return path->cnt;
 }
 
+extern int
+srepo_sch_push_path_atom(struct srepo_sch_path *  path,
+                         const struct lysc_node * atom)
+	__srepo_nonull(1, 2) __srepo_export;
+
+extern void
+srepo_sch_invert_path(struct srepo_sch_path * path)
+	__srepo_nonull(1) __srepo_export;
+
 extern char *
 srepo_sch_path_string(const struct srepo_sch_path * path)
+	__srepo_nonull(1) __srepo_export;
+
+extern void
+srepo_sch_init_path(struct srepo_sch_path * path)
 	__srepo_nonull(1) __srepo_export;
 
 extern void
