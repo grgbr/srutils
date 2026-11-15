@@ -109,6 +109,29 @@ srplug_agent_subscribe_all(struct srplug_agent *     agent,
 	                                   agent->poll);
 }
 
+typedef int
+        srplug_agent_autosubscribe_fn(struct srplug_agent *, void *)
+		__srplug_nonull(1) __warn_result;
+
+#define SRPLUG_AGENT_DEFINE_AUTOSUB(_func, _obj_autosub) \
+	__srplug_nonull(1) __warn_result \
+	int \
+	_func(struct srplug_agent * agent, void * data) \
+	{ \
+		srplug_agent_assert(agent); \
+		\
+		return _obj_autosub(&agent->base, data, agent->poll); \
+	}
+
+#define SRPLUG_AGENT_AUTOSUB(_func, _sect_name) \
+	srplug_agent_autosubscribe_fn _func; \
+	\
+	static \
+	SRPLUG_OBJECT_DEFINE_AUTOSUB(STROLL_CONCAT(_func, __objautosub), \
+	                             _sect_name) \
+	\
+	SRPLUG_AGENT_DEFINE_AUTOSUB(_func, STROLL_CONCAT(_func, __objautosub))
+
 static inline __srplug_nonull(1, 2) __warn_result
 int
 srplug_agent_open(struct srplug_agent * agent, const struct upoll * poller)

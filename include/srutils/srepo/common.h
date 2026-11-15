@@ -4,6 +4,7 @@
 #include <srutils/srepo/priv/common.h>
 #include <stdbool.h>
 #include <stdarg.h>
+#include <stdio.h>
 
 /**
  * Return codes used to traverse Yang trees.

@@ -211,6 +211,29 @@ srplug_daemon_subscribe_all(struct srplug_daemon *    daemon,
 	                                   &daemon->poll);
 }
 
+typedef int
+        srplug_daemon_autosubscribe_fn(struct srplug_daemon *, void *)
+		__srplug_nonull(1) __warn_result;
+
+#define SRPLUG_DAEMON_DEFINE_AUTOSUB(_func, _obj_autosub) \
+	__srplug_nonull(1) __warn_result \
+	int \
+	_func(struct srplug_daemon * daemon, void * data) \
+	{ \
+		srplug_daemon_assert(daemon); \
+		\
+		return _obj_autosub(&daemon->base, data, &daemon->poll); \
+	}
+
+#define SRPLUG_DAEMON_AUTOSUB(_func, _sect_name) \
+	srplug_daemon_autosubscribe_fn _func; \
+	\
+	static \
+	SRPLUG_OBJECT_DEFINE_AUTOSUB(STROLL_CONCAT(_func, __objautosub), \
+	                             _sect_name) \
+	\
+	SRPLUG_DAEMON_DEFINE_AUTOSUB(_func, STROLL_CONCAT(_func, __objautosub))
+
 extern int
 srplug_daemon_poll(const struct srplug_daemon * daemon)
 	__srplug_nonull(1) __warn_result __srplug_export;

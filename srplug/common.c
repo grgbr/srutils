@@ -391,6 +391,48 @@ srplug_register_rpc_sub(sr_subscription_ctx_t **      subscriptions,
 		return 0;
 }
 
+static int
+srplug_register_sub(sr_subscription_ctx_t **  context,
+                    sr_session_ctx_t *        session,
+                    const struct srplug_sub * subscription,
+                    void *                    data)
+{
+	srplug_assert(subscription);
+	srplug_assert(subscription->kind >= 0);
+	srplug_assert(subscription->kind < SRPLUG_SUB_KIND_NR);
+
+	int ret;
+
+	switch (subscription->kind) {
+	case SRPLUG_CHANGE_SUB_KIND:
+		ret = srplug_register_change_sub(context,
+		                                 session,
+		                                 &subscription->change,
+		                                 data);
+		break;
+
+	case SRPLUG_OPER_SUB_KIND:
+		ret = srplug_register_oper_sub(context,
+		                               session,
+		                               &subscription->oper,
+		                               data);
+		break;
+
+	case SRPLUG_RPC_SUB_KIND:
+		ret = srplug_register_rpc_sub(context,
+		                              session,
+		                              &subscription->rpc,
+		                              data);
+		break;
+
+	default:
+		srplug_assert(0);
+		ret = -ENOTSUP;
+	}
+
+	return ret;
+}
+
 static void
 srplug_adjust_tmr(struct etux_timer * timer, const struct timespec * tmout)
 {
@@ -703,39 +745,38 @@ srplug_object_subscribe_all(struct srplug_object *    object,
 	sr_session_ctx_t *       sess = object->sess;
 
 	for (s = 0; s < nr; s++) {
-		srplug_assert(subscriptions[s].kind >= 0);
-		srplug_assert(subscriptions[s].kind < SRPLUG_SUB_KIND_NR);
+		int err;
 
-		const struct srplug_sub * sub = &subscriptions[s];
-		int                       err;
+		err = srplug_register_sub(ctx, sess, &subscriptions[s], data);
+		if (err)
+			return err;
+	}
 
-		switch (sub->kind) {
-		case SRPLUG_CHANGE_SUB_KIND:
-			err = srplug_register_change_sub(ctx,
-			                                 sess,
-			                                 &sub->change,
-			                                 data);
-			break;
+	/* Enable asynchronous processing of subscriptions. */
+	return srplug_object_enable_subs(object, poller);
+}
 
-		case SRPLUG_OPER_SUB_KIND:
-			err = srplug_register_oper_sub(ctx,
-			                               sess,
-			                               &sub->oper,
-			                               data);
-			break;
+int
+srplug_object_autosubscribe(struct srplug_object *            object,
+                            const struct srplug_sub * const * begin,
+                            const struct srplug_sub * const * end,
+                            void *                            data,
+                            const struct upoll *              poller)
+{
+	srplug_object_assert(object);
+	srplug_assert(begin);
+	srplug_assert(end);
+	srplug_assert(end > begin);
+	srplug_assert(poller);
 
-		case SRPLUG_RPC_SUB_KIND:
-			err = srplug_register_rpc_sub(ctx,
-			                              sess,
-			                              &sub->rpc,
-			                              data);
-			break;
+	sr_subscription_ctx_t **          ctx = &object->ctx;
+	sr_session_ctx_t *                sess = object->sess;
+	const struct srplug_sub * const * subp;
 
-		default:
-			srplug_assert(0);
-			err = -ENOTSUP;
-		}
+	for (subp = begin; subp < end; subp++) {
+		int err;
 
+		err = srplug_register_sub(ctx, sess, *subp, data);
 		if (err)
 			return err;
 	}

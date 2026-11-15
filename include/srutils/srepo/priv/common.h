@@ -1,6 +1,10 @@
 #ifndef _SREPO_PRIV_COMMON_H
 #define _SREPO_PRIV_COMMON_H
 
+#if !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif /* defined(_GNU_SOURCE) */
+
 #include <srutils/priv/config.h>
 #include <sysrepo.h>
 #include <stroll/cdefs.h>

@@ -3,6 +3,7 @@
 
 #include <srutils/priv/config.h>
 #include <srutils/srepo/common.h>
+#include <stroll/sect.h>
 #include <utils/poll.h>
 #include <utils/timer.h>
 #include <stdbool.h>
@@ -290,6 +291,70 @@ srplug_object_subscribe_all(struct srplug_object *    object,
                             void *                    data,
                             const struct upoll *      poller)
 	__srplug_nonull(1, 2, 5) __warn_result __srplug_export;
+
+#define __srplug_subs_sect_name(_name) \
+	STROLL_CONCAT(STROLL_CONCAT(_name, _), srplugsubs)
+
+#define __srplug_subs_sect_start(_sect_name) \
+	__stroll_sect_start(__srplug_subs_sect_name(_sect_name))
+
+#define __srplug_subs_sect_stop(_sect_name) \
+	__stroll_sect_stop(__srplug_subs_sect_name(_sect_name))
+
+#if defined(__pie__) || defined(__PIE__) || \
+    defined(__pic__) || defined(__PIC__)
+
+#define __srplug_subs_sect(_name) \
+	__stroll_rwdata_sect(__srplug_subs_sect_name(_name))
+
+#else  /* !(defined(__pie__) || defined(__PIE__) ||
+            defined(__pic__) || defined(__PIC__)) */
+
+#define __srplug_subs_sect(_name) \
+	__stroll_rodata_sect(__srplug_subs_sect_name(_name))
+
+#endif /* defined(__pie__) || defined(__PIE__) ||
+          defined(__pic__) || defined(__PIC__) */
+
+#define SRPLUG_AUTOSUB(_var, _sect_name) \
+	static const struct srplug_sub * const \
+	__ ## _var ## __srplugsubs __srplug_subs_sect(_sect_name) = &(_var)
+
+extern int
+srplug_object_autosubscribe(struct srplug_object *            object,
+                            const struct srplug_sub * const * begin,
+                            const struct srplug_sub * const * end,
+                            void *                            data,
+                            const struct upoll *              poller)
+	__srplug_nonull(1, 2, 3, 5) __warn_result __srplug_export;
+
+typedef int srplug_object_autosubscribe_fn(struct srplug_object *,
+                                           void *,
+                                           const struct upoll *)
+		__srplug_nonull(1, 3) __warn_result;
+
+#define SRPLUG_OBJECT_DEFINE_AUTOSUB(_func, _sect_name) \
+	__srplug_nonull(1, 3) __warn_result \
+	int \
+	_func(struct srplug_object * object, \
+	      void *                 data, \
+	      const struct upoll *   poller) \
+	{ \
+		srplug_object_assert(object); \
+		srplug_assert(poller); \
+		\
+		extern const struct srplug_sub * const \
+			__srplug_subs_sect_start(_sect_name); \
+		extern const struct srplug_sub * const \
+			__srplug_subs_sect_stop(_sect_name); \
+		\
+		return srplug_object_autosubscribe( \
+			object, \
+			&__srplug_subs_sect_start(_sect_name), \
+			&__srplug_subs_sect_stop(_sect_name), \
+			data, \
+			poller); \
+	}
 
 extern int
 srplug_object_open(struct srplug_object * object)
