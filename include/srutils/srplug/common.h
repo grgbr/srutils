@@ -305,13 +305,13 @@ srplug_object_subscribe_all(struct srplug_object *    object,
     defined(__pic__) || defined(__PIC__)
 
 #define __srplug_subs_sect(_name) \
-	__stroll_rwdata_sect(__srplug_subs_sect_name(_name))
+	__stroll_sect_rwdata(__srplug_subs_sect_name(_name))
 
 #else  /* !(defined(__pie__) || defined(__PIE__) ||
             defined(__pic__) || defined(__PIC__)) */
 
 #define __srplug_subs_sect(_name) \
-	__stroll_rodata_sect(__srplug_subs_sect_name(_name))
+	__stroll_sect_rodata(__srplug_subs_sect_name(_name))
 
 #endif /* defined(__pie__) || defined(__PIE__) ||
           defined(__pic__) || defined(__PIC__) */
