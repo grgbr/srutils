@@ -98,6 +98,7 @@ bool
 srepo_has_changes(const sr_session_ctx_t * session)
 {
 	srepo_assert(session);
+STROLL_IGNORE_WARN("-Wcast-qual")
 	srepo_assert((sr_session_get_ds((sr_session_ctx_t *)session) ==
 	                                SR_DS_STARTUP) ||
 	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
@@ -108,7 +109,9 @@ srepo_has_changes(const sr_session_ctx_t * session)
 	                                SR_DS_OPERATIONAL));
 
 	return !!sr_has_changes((sr_session_ctx_t *)session);
+STROLL_RESTORE_WARN
 }
+
 
 extern sr_error_t
 srepo_apply_changes(sr_session_ctx_t * session)
@@ -157,7 +160,9 @@ srepo_session_dstore(const sr_session_ctx_t * session)
 {
 	srepo_assert(session);
 
+STROLL_IGNORE_WARN("-Wcast-qual")
 	return sr_session_get_ds((sr_session_ctx_t *)session);
+STROLL_RESTORE_WARN
 }
 
 extern sr_error_t

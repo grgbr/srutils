@@ -167,10 +167,10 @@ srepo_dat_changef_bypath(sr_session_ctx_t * session,
 	             (sr_session_get_ds((sr_session_ctx_t *)session) ==
 	              SR_DS_OPERATIONAL));
 	srepo_assert(srepo_xpath_validate(path) > 0);
-	srepo_assert(!(flags & ~(SR_EDIT_DEFAULT |
-	                         SR_EDIT_NON_RECURSIVE |
-	                         SR_EDIT_STRICT |
-	                         SR_EDIT_ISOLATE)));
+	srepo_assert(!(flags & ~((uint32_t)(SR_EDIT_DEFAULT |
+	                                    SR_EDIT_NON_RECURSIVE |
+	                                    SR_EDIT_STRICT |
+	                                    SR_EDIT_ISOLATE))));
 	srepo_assert(format);
 	srepo_assert(format[0]);
 

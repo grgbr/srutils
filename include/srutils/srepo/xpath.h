@@ -116,13 +116,13 @@ srepo_xpath_createf(char ** __restrict      xpath,
 	srepo_assert(format[0]);
 
 	va_list args;
-	int     len;
+	ssize_t len;
 
 	va_start(args, format);
 	len = srepo_xpath_vcreatef(xpath, format, args);
 	va_end(args);
 
-	return (ssize_t)len;
+	return len;
 }
 
 /******************************************************************************

@@ -151,7 +151,9 @@ srplug_object_worker(const struct srplug_object * object)
 {
 	srplug_object_assert(object);
 
+STROLL_IGNORE_WARN("-Wcast-qual")
 	return (struct upoll_worker *)&object->work;
+STROLL_RESTORE_WARN
 }
 
 struct srplug_change_sub {
