@@ -64,6 +64,14 @@ srepo_xpath_recover(sr_xpath_ctx_t * context)
  * XPATH build logic.
  ******************************************************************************/
 
+#define srepo_xpath_const_concat(_dest, _dest_len, _src) \
+	compile_eval(_stroll_is_array(_src), \
+	             srepo_xpath_concat(_dest, \
+	                                _dest_len, \
+	                                _src, \
+	                                sizeof(_src) - 1), \
+	                                "C string array expected")
+
 extern ssize_t
 srepo_xpath_concat(char * __restrict destination,
                    size_t            destnation_length,
