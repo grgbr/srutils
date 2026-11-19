@@ -758,8 +758,10 @@ srplug_daemon_cmdln_help_filter(int key, const char * text, void * data)
 		return NULL;
 
 	default:
-		srplug_assert(text);
-		return strdup(text);
+STROLL_IGNORE_WARN("-Wcast-qual")
+		/* Tell the caller to use `text' as-is. */
+		return (char *)text;
+STROLL_RESTORE_WARN
 	}
 }
 
