@@ -59,7 +59,9 @@ srepo_dat_node_value(const struct lyd_node * node)
 	srepo_assert(node->schema);
 	srepo_assert(srepo_dat_node_type(node) & LYD_NODE_TERM);
 
+STROLL_IGNORE_WARN("-Wcast-align")
 	return &((const struct lyd_node_term *)node)->value;
+STROLL_RESTORE_WARN
 }
 
 static inline __srepo_nonull(1)

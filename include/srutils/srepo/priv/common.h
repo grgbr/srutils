@@ -6,8 +6,10 @@
 #endif /* defined(_GNU_SOURCE) */
 
 #include <srutils/priv/config.h>
-#include <sysrepo.h>
 #include <stroll/cdefs.h>
+STROLL_IGNORE_WARN("-Wcast-align")
+#include <sysrepo.h>
+STROLL_RESTORE_WARN
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
