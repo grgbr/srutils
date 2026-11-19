@@ -13,7 +13,9 @@ srepo_dat_node_name(const struct lyd_node * node)
 {
 	srepo_assert(node);
 
+STROLL_IGNORE_WARN("-Wcast-qual")
 	const char * name = LYD_NAME(node);
+STROLL_RESTORE_WARN
 
 	return (srepo_xpath_validate_node(name) > 0) ? name : NULL;
 }

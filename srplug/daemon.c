@@ -758,7 +758,8 @@ srplug_daemon_cmdln_help_filter(int key, const char * text, void * data)
 		return NULL;
 
 	default:
-		return (char *)text;
+		srplug_assert(text);
+		return strdup(text);
 	}
 }
 

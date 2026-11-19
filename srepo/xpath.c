@@ -176,6 +176,7 @@ srepo_xpath_vlog_sess(const sr_session_ctx_t * __restrict session,
 	char * fmt;
 	int    ret;
 
+STROLL_IGNORE_WARN("-Wcast-qual")
 	ret = srepo_asprintf(
 		&fmt,
 		"%s[conn:%" PRIu32 "|sess:%" PRIu32 "|ds:%s|path:%s]: %s.",
@@ -187,6 +188,7 @@ srepo_xpath_vlog_sess(const sr_session_ctx_t * __restrict session,
 		                                   session)),
 		xpath,
 		format);
+STROLL_RESTORE_WARN
 	if (ret > 0) {
 		elog_vlog(srepo_logger, severity, fmt, args);
 		srepo_free(fmt);

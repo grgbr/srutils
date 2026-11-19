@@ -7,8 +7,10 @@
 
 #include <srutils/priv/config.h>
 #include <stroll/cdefs.h>
+STROLL_IGNORE_WARN("-Wcast-qual")
 STROLL_IGNORE_WARN("-Wcast-align")
 #include <sysrepo.h>
+STROLL_RESTORE_WARN
 STROLL_RESTORE_WARN
 #include <stdlib.h>
 #include <string.h>

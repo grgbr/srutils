@@ -252,10 +252,12 @@ srplug_process_child_changes(sr_session_ctx_t *                 session,
 	if (ret < 0)
 		return srepo_sys_error(ret);
 
+STROLL_IGNORE_WARN("-Wcast-qual")
 	ret = srplug_handle_changes(session,
 	                            pth,
 	                            srplug_dispatch_child_change,
 	                            (void *)&disp);
+STROLL_RESTORE_WARN
 	srepo_free(pth);
 
 	return ret;

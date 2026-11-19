@@ -57,11 +57,13 @@ srepo_vlog_conn(const sr_conn_ctx_t * __restrict connection,
 	char * fmt;
 	int    ret;
 
+STROLL_IGNORE_WARN("-Wcast-qual")
 	ret = srepo_asprintf(&fmt,
 	                     "%s[conn:%" PRIu32 "]: %s.",
 	                     prefix,
 	                     sr_get_cid((sr_conn_ctx_t *)connection),
 	                     format);
+STROLL_RESTORE_WARN
 	if (ret > 0) {
 		elog_vlog(srepo_logger, severity, fmt, args);
 		srepo_free(fmt);
@@ -86,6 +88,7 @@ srepo_vlog_sess(const sr_session_ctx_t * __restrict session,
 	char * fmt;
 	int    ret;
 
+STROLL_IGNORE_WARN("-Wcast-qual")
 	ret = srepo_asprintf(
 		&fmt,
 		"%s[conn:%" PRIu32 "|sess:%" PRIu32 "|ds:%s]: %s.",
@@ -96,6 +99,7 @@ srepo_vlog_sess(const sr_session_ctx_t * __restrict session,
 		srepo_dstore_str(sr_session_get_ds((sr_session_ctx_t *)
 		                                   session)),
 		format);
+STROLL_RESTORE_WARN
 	if (ret > 0) {
 		elog_vlog(srepo_logger, severity, fmt, args);
 		srepo_free(fmt);
